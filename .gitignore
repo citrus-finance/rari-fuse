@@ -16,3 +16,4 @@ deployments/rinkeby/
 deployments/kovan/
 contracts.iml
 dist
+node_modules/
