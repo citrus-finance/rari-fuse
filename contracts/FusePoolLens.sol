@@ -22,33 +22,33 @@ import "./oracles/default/IKeydonixUniswapTwapPriceOracle.sol";
  * @notice FusePoolLens returns data on Fuse interest rate pools in mass for viewing by dApps, bots, etc.
  */
 contract FusePoolLens is Initializable {
-    /**
-     * @notice Initialize the `FusePoolDirectory` contract object.
-     * @param _directory The FusePoolDirectory
-     * @param _name Name for the nativeToken
-     * @param _symbol Symbol for the nativeToken
-     * @param _hardcodedAddresses Underlying token addresses for a token like maker which are DSToken and/or use bytes32 for `symbol`
-     * @param _hardcodedNames Harcoded name for these tokens
-     * @param _hardcodedSymbols Harcoded symbol for these tokens
-     * @param _uniswapLPTokenNames Harcoded names for underlying uniswap LpToken
-     * @param _uniswapLPTokenSymbols Harcoded symbols for underlying uniswap LpToken
-     * @param _uniswapLPTokenDisplayNames Harcoded display names for underlying uniswap LpToken
-     */
-    function initialize(
-        FusePoolDirectory _directory,
-        string memory _name,
-        string memory _symbol,
-        address[] memory _hardcodedAddresses,
-        string[] memory _hardcodedNames,
-        string[] memory _hardcodedSymbols,
-        string[] memory _uniswapLPTokenNames,
-        string[] memory _uniswapLPTokenSymbols,
-        string[] memory _uniswapLPTokenDisplayNames
-    ) public initializer {
-        require(
-            address(_directory) != address(0),
-            "FusePoolDirectory instance cannot be the zero address."
-        );
+  /**
+   * @notice Constructor to set the `FusePoolDirectory` contract object.
+   */
+  function initialize(
+    FusePoolDirectory _directory,
+    string memory _name,
+    string memory _symbol,
+    address[] memory _hardcodedAddresses,
+    string[] memory _hardcodedNames,
+    string[] memory _hardcodedSymbols,
+    string[] memory _uniswapLPTokenNames,
+    string[] memory _uniswapLPTokenSymbols, 
+    string[] memory _uniswapLPTokenDisplayNames
+  ) public initializer {
+    require(address(_directory) != address(0), "FusePoolDirectory instance cannot be the zero address.");
+    require(
+      _hardcodedAddresses.length > 0 &&
+      _hardcodedAddresses.length == _hardcodedNames.length &&
+      _hardcodedAddresses.length == _hardcodedSymbols.length,
+      "No hardcoded addresses supplied or array lengths not equal."
+    );
+    require(
+      _uniswapLPTokenNames.length > 0 &&
+      _uniswapLPTokenNames.length == _uniswapLPTokenSymbols.length &&
+      _uniswapLPTokenNames.length == _uniswapLPTokenDisplayNames.length,
+      "No uniswap LP token names supplied or array lengths not equal."
+    );
 
         directory = _directory;
         name = _name;
