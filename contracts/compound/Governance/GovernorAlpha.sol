@@ -133,11 +133,7 @@ contract GovernorAlpha {
   /// @notice An event emitted when a proposal has been executed in the Timelock
   event ProposalExecuted(uint256 id);
 
-  constructor(
-    address timelock_,
-    address comp_,
-    address guardian_
-  ) {
+  constructor(address timelock_, address comp_, address guardian_) {
     timelock = TimelockInterface(timelock_);
     comp = CompInterface(comp_);
     guardian = guardian_;
@@ -280,15 +276,12 @@ contract GovernorAlpha {
     emit ProposalCanceled(proposalId);
   }
 
-  function getActions(uint256 proposalId)
+  function getActions(
+    uint256 proposalId
+  )
     public
     view
-    returns (
-      address[] memory targets,
-      uint256[] memory values,
-      string[] memory signatures,
-      bytes[] memory calldatas
-    )
+    returns (address[] memory targets, uint256[] memory values, string[] memory signatures, bytes[] memory calldatas)
   {
     Proposal storage p = proposals[proposalId];
     return (p.targets, p.values, p.signatures, p.calldatas);
@@ -324,13 +317,7 @@ contract GovernorAlpha {
     return _castVote(msg.sender, proposalId, support);
   }
 
-  function castVoteBySig(
-    uint256 proposalId,
-    bool support,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) public {
+  function castVoteBySig(uint256 proposalId, bool support, uint8 v, bytes32 r, bytes32 s) public {
     bytes32 domainSeparator = keccak256(
       abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this))
     );
@@ -341,11 +328,7 @@ contract GovernorAlpha {
     return _castVote(signatory, proposalId, support);
   }
 
-  function _castVote(
-    address voter,
-    uint256 proposalId,
-    bool support
-  ) internal {
+  function _castVote(address voter, uint256 proposalId, bool support) internal {
     require(state(proposalId) == ProposalState.Active, "GovernorAlpha::_castVote: voting is closed");
     Proposal storage proposal = proposals[proposalId];
     Receipt storage receipt = proposal.receipts[voter];

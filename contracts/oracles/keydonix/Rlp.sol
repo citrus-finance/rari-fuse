@@ -349,11 +349,7 @@ library Rlp {
   }
 
   // Assumes that enough memory has been allocated to store in target.
-  function _copyToBytes(
-    uint256 sourceBytes,
-    bytes memory destinationBytes,
-    uint256 btsLen
-  ) internal pure {
+  function _copyToBytes(uint256 sourceBytes, bytes memory destinationBytes, uint256 btsLen) internal pure {
     // Exploiting the fact that 'tgt' was the last thing to be allocated,
     // we can write entire words, and just overwrite any excess.
     assembly {

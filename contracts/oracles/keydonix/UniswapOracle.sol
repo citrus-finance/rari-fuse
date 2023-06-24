@@ -20,15 +20,10 @@ contract UniswapOracle {
     bytes priceAccumulatorProofNodesRlp;
   }
 
-  function getAccountStorageRoot(address uniswapV2Pair, ProofData memory proofData)
-    public
-    view
-    returns (
-      bytes32 storageRootHash,
-      uint256 blockNumber,
-      uint256 blockTimestamp
-    )
-  {
+  function getAccountStorageRoot(
+    address uniswapV2Pair,
+    ProofData memory proofData
+  ) public view returns (bytes32 storageRootHash, uint256 blockNumber, uint256 blockTimestamp) {
     bytes32 stateRoot;
     (stateRoot, blockTimestamp, blockNumber) = BlockVerifier.extractStateRootAndTimestamp(proofData.block);
     bytes memory accountDetailsBytes = MerklePatriciaVerifier.getValueFromProof(
@@ -75,8 +70,8 @@ contract UniswapOracle {
       )
     );
     reserveTimestamp = reserve0Reserve1TimestampPacked >> (112 + 112);
-    reserve1 = uint112((reserve0Reserve1TimestampPacked >> 112) & (2**112 - 1));
-    reserve0 = uint112(reserve0Reserve1TimestampPacked & (2**112 - 1));
+    reserve1 = uint112((reserve0Reserve1TimestampPacked >> 112) & (2 ** 112 - 1));
+    reserve0 = uint112(reserve0Reserve1TimestampPacked & (2 ** 112 - 1));
   }
 
   function getPrice(
@@ -146,11 +141,10 @@ contract UniswapOracle {
     return (price, blockNumber);
   }
 
-  function getCurrentPriceCumulativeLast(IUniswapV2Pair uniswapV2Pair, bool denominationTokenIs0)
-    public
-    view
-    returns (uint256 priceCumulativeLast)
-  {
+  function getCurrentPriceCumulativeLast(
+    IUniswapV2Pair uniswapV2Pair,
+    bool denominationTokenIs0
+  ) public view returns (uint256 priceCumulativeLast) {
     (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) = uniswapV2Pair.getReserves();
     priceCumulativeLast = denominationTokenIs0
       ? uniswapV2Pair.price1CumulativeLast()

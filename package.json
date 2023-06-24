@@ -29,7 +29,7 @@
     "typechain": "typechain --target ethers-v5 --out-dir './typechain' 'out/*/**.json'",
     "deploy:simulate:bsc:mainnet": "FORK_URL_BSC=${FORK_URL_BSC} FORK_BLOCK_NUMBER=${FORK_BLOCK_NUMBER} FORK_CHAIN_ID=56 hardhat node --tags simulate",
     "deploy:bsc:mainnet": "hardhat --network bsc deploy --tags prod",
-    "prettier:sol": "prettier --write 'contracts/**/*.sol' 'contracts_forge/**/*.sol'",
+    "prettier:sol": "prettier --write 'contracts/**/*.sol'",
     "prettier:ts": "prettier --write 'chainDeploy/**/*.ts' 'src/**/*.ts' 'deploy/**/*.ts' 'tasks/**/*.ts' 'test/**/*.ts'",
     "prettier": "npm run prettier:ts && npm run prettier:sol"
   },
@@ -65,7 +65,7 @@
     "@types/bad-words": "^3.0.1",
     "bad-words": "^3.0.4",
     "lint-staged": "12.3.7",
-    "prettier": "2.6.1",
-    "prettier-plugin-solidity": "1.0.0-beta.19"
+    "prettier": "^2.8.8",
+    "prettier-plugin-solidity": "^1.1.3"
   }
 }

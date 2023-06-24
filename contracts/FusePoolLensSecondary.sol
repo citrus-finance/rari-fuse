@@ -46,16 +46,9 @@ contract FusePoolLensSecondary is Initializable {
    * @dev This function is not designed to be called in a transaction: it is too gas-intensive.
    * Ideally, we can add the `view` modifier, but many cToken functions potentially modify the state.
    */
-  function getPoolOwnership(IComptroller comptroller)
-    external
-    view
-    returns (
-      address,
-      bool,
-      bool,
-      CTokenOwnership[] memory
-    )
-  {
+  function getPoolOwnership(
+    IComptroller comptroller
+  ) external view returns (address, bool, bool, CTokenOwnership[] memory) {
     // Get pool ownership
     address comptrollerAdmin = comptroller.admin();
     bool comptrollerAdminHasRights = comptroller.adminHasRights();
@@ -149,11 +142,7 @@ contract FusePoolLensSecondary is Initializable {
    * @param account The account to determine liquidity for.
    * @return Maximum borrow/redeem amount.
    */
-  function getMaxRedeemOrBorrow(
-    address account,
-    ICToken cTokenModify,
-    bool isBorrow
-  ) internal returns (uint256) {
+  function getMaxRedeemOrBorrow(address account, ICToken cTokenModify, bool isBorrow) internal returns (uint256) {
     // Accrue interest
     uint256 balanceOfUnderlying = cTokenModify.balanceOfUnderlying(account);
 
@@ -213,16 +202,12 @@ contract FusePoolLensSecondary is Initializable {
    * @notice Returns an array of all markets, an array of all `RewardsDistributor` contracts, an array of reward token addresses for each `RewardsDistributor`, an array of supply speeds for each distributor for each, and their borrow speeds.
    * @param comptroller The Fuse pool Comptroller to check.
    */
-  function getRewardSpeedsByPool(IComptroller comptroller)
+  function getRewardSpeedsByPool(
+    IComptroller comptroller
+  )
     public
     view
-    returns (
-      ICToken[] memory,
-      IRewardsDistributor[] memory,
-      address[] memory,
-      uint256[][] memory,
-      uint256[][] memory
-    )
+    returns (ICToken[] memory, IRewardsDistributor[] memory, address[] memory, uint256[][] memory, uint256[][] memory)
   {
     ICToken[] memory allMarkets = comptroller.getAllMarkets();
     IRewardsDistributor[] memory distributors;
@@ -260,7 +245,9 @@ contract FusePoolLensSecondary is Initializable {
    * @notice For each `Comptroller`, returns an array of all markets, an array of all `RewardsDistributor` contracts, an array of reward token addresses for each `RewardsDistributor`, an array of supply speeds for each distributor for each, and their borrow speeds.
    * @param comptrollers The Fuse pool Comptrollers to check.
    */
-  function getRewardSpeedsByPools(IComptroller[] memory comptrollers)
+  function getRewardSpeedsByPools(
+    IComptroller[] memory comptrollers
+  )
     external
     view
     returns (
@@ -315,16 +302,10 @@ contract FusePoolLensSecondary is Initializable {
    * @param distributors The `RewardsDistributor` contracts to check.
    * @return For each of `distributors`: total quantity of unclaimed rewards, array of cTokens, array of unaccrued (unclaimed) supply-side and borrow-side rewards per cToken, and quantity of funds available in the distributor.
    */
-  function getUnclaimedRewardsByDistributors(address holder, IRewardsDistributor[] memory distributors)
-    external
-    returns (
-      address[] memory,
-      uint256[] memory,
-      ICToken[][] memory,
-      uint256[2][][] memory,
-      uint256[] memory
-    )
-  {
+  function getUnclaimedRewardsByDistributors(
+    address holder,
+    IRewardsDistributor[] memory distributors
+  ) external returns (address[] memory, uint256[] memory, ICToken[][] memory, uint256[2][][] memory, uint256[] memory) {
     address[] memory rewardTokens = new address[](distributors.length);
     uint256[] memory compUnclaimedTotal = new uint256[](distributors.length);
     ICToken[][] memory allMarkets = new ICToken[][](distributors.length);
@@ -353,15 +334,9 @@ contract FusePoolLensSecondary is Initializable {
    * @notice Returns arrays of indexes, `Comptroller` proxy contracts, and `RewardsDistributor` contracts for Fuse pools supplied to by `account`.
    * @dev This function is not designed to be called in a transaction: it is too gas-intensive.
    */
-  function getRewardsDistributorsBySupplier(address supplier)
-    external
-    view
-    returns (
-      uint256[] memory,
-      IComptroller[] memory,
-      IRewardsDistributor[][] memory
-    )
-  {
+  function getRewardsDistributorsBySupplier(
+    address supplier
+  ) external view returns (uint256[] memory, IComptroller[] memory, IRewardsDistributor[][] memory) {
     // Get array length
     FusePoolDirectory.FusePool[] memory pools = directory.getAllPools();
     uint256 arrayLength = 0;

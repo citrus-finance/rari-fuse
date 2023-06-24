@@ -14,18 +14,10 @@ interface ILpTokenStaker {
   function userInfo(address _token, address _user) external view returns (uint256, uint256);
 
   // Deposit LP tokens into the contract. Also triggers a claim.
-  function deposit(
-    address _token,
-    uint256 _amount,
-    bool _claimRewards
-  ) external returns (uint256);
+  function deposit(address _token, uint256 _amount, bool _claimRewards) external returns (uint256);
 
   // Withdraw LP tokens. Also triggers a claim.
-  function withdraw(
-    address _token,
-    uint256 _amount,
-    bool _claimRewards
-  ) external returns (uint256);
+  function withdraw(address _token, uint256 _amount, bool _claimRewards) external returns (uint256);
 }
 
 /**

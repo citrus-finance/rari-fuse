@@ -29,11 +29,7 @@ contract Reservoir {
    * @param token_ The token to drip
    * @param target_ The recipient of dripped tokens
    */
-  constructor(
-    uint256 dripRate_,
-    EIP20Interface token_,
-    address target_
-  ) {
+  constructor(uint256 dripRate_, EIP20Interface token_, address target_) {
     dripStart = block.number;
     dripRate = dripRate_;
     token = token_;
@@ -71,31 +67,19 @@ contract Reservoir {
 
   /* Internal helper functions for safe math */
 
-  function add(
-    uint256 a,
-    uint256 b,
-    string memory errorMessage
-  ) internal pure returns (uint256) {
+  function add(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
     uint256 c = a + b;
     require(c >= a, errorMessage);
     return c;
   }
 
-  function sub(
-    uint256 a,
-    uint256 b,
-    string memory errorMessage
-  ) internal pure returns (uint256) {
+  function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
     require(b <= a, errorMessage);
     uint256 c = a - b;
     return c;
   }
 
-  function mul(
-    uint256 a,
-    uint256 b,
-    string memory errorMessage
-  ) internal pure returns (uint256) {
+  function mul(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
     if (a == 0) {
       return 0;
     }

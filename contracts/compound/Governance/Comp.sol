@@ -126,11 +126,7 @@ contract Comp {
    * @param rawAmount The number of tokens to transfer
    * @return Whether or not the transfer succeeded
    */
-  function transferFrom(
-    address src,
-    address dst,
-    uint256 rawAmount
-  ) external returns (bool) {
+  function transferFrom(address src, address dst, uint256 rawAmount) external returns (bool) {
     address spender = msg.sender;
     uint96 spenderAllowance = allowances[src][spender];
     uint96 amount = safe96(rawAmount, "Comp::approve: amount exceeds 96 bits");
@@ -167,14 +163,7 @@ contract Comp {
    * @param r Half of the ECDSA signature pair
    * @param s Half of the ECDSA signature pair
    */
-  function delegateBySig(
-    address delegatee,
-    uint256 nonce,
-    uint256 expiry,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) public {
+  function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) public {
     bytes32 domainSeparator = keccak256(
       abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this))
     );
@@ -248,11 +237,7 @@ contract Comp {
     _moveDelegates(currentDelegate, delegatee, delegatorBalance);
   }
 
-  function _transferTokens(
-    address src,
-    address dst,
-    uint96 amount
-  ) internal {
+  function _transferTokens(address src, address dst, uint96 amount) internal {
     require(src != address(0), "Comp::_transferTokens: cannot transfer from the zero address");
     require(dst != address(0), "Comp::_transferTokens: cannot transfer to the zero address");
 
@@ -263,11 +248,7 @@ contract Comp {
     _moveDelegates(delegates[src], delegates[dst], amount);
   }
 
-  function _moveDelegates(
-    address srcRep,
-    address dstRep,
-    uint96 amount
-  ) internal {
+  function _moveDelegates(address srcRep, address dstRep, uint96 amount) internal {
     if (srcRep != dstRep && amount > 0) {
       if (srcRep != address(0)) {
         uint32 srcRepNum = numCheckpoints[srcRep];
@@ -285,12 +266,7 @@ contract Comp {
     }
   }
 
-  function _writeCheckpoint(
-    address delegatee,
-    uint32 nCheckpoints,
-    uint96 oldVotes,
-    uint96 newVotes
-  ) internal {
+  function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
     uint32 blockNumber = safe32(block.number, "Comp::_writeCheckpoint: block number exceeds 32 bits");
 
     if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
@@ -304,30 +280,22 @@ contract Comp {
   }
 
   function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
-    require(n < 2**32, errorMessage);
+    require(n < 2 ** 32, errorMessage);
     return uint32(n);
   }
 
   function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {
-    require(n < 2**96, errorMessage);
+    require(n < 2 ** 96, errorMessage);
     return uint96(n);
   }
 
-  function add96(
-    uint96 a,
-    uint96 b,
-    string memory errorMessage
-  ) internal pure returns (uint96) {
+  function add96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
     uint96 c = a + b;
     require(c >= a, errorMessage);
     return c;
   }
 
-  function sub96(
-    uint96 a,
-    uint96 b,
-    string memory errorMessage
-  ) internal pure returns (uint96) {
+  function sub96(uint96 a, uint96 b, string memory errorMessage) internal pure returns (uint96) {
     require(b <= a, errorMessage);
     return a - b;
   }

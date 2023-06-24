@@ -168,7 +168,7 @@ contract CDaiDelegate is CErc20Delegate {
 
   /*** Maker Internals ***/
 
-  uint256 constant RAY = 10**27;
+  uint256 constant RAY = 10 ** 27;
 
   function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
     require((z = x + y) >= x, "add-overflow");
@@ -198,11 +198,7 @@ interface GemLike {
 
   function balanceOf(address) external view returns (uint256);
 
-  function transferFrom(
-    address,
-    address,
-    uint256
-  ) external returns (bool);
+  function transferFrom(address, address, uint256) external returns (bool);
 }
 
 interface VatLike {

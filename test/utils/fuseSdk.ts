@@ -71,8 +71,8 @@ export const getCommonDeployments = async (chainDeployment: ChainDeployment) => 
     address: WhitePaperInterestRateModel.address,
   };
 
-  return chainDeployment
-}
+  return chainDeployment;
+};
 
 export const getLocalDeployments = async (): Promise<ChainDeployment> => {
   let chainDeployment: ChainDeployment = {};
@@ -83,9 +83,8 @@ export const getLocalDeployments = async (): Promise<ChainDeployment> => {
   const TRIBEToken = await ethers.getContract("TRIBEToken");
   const TRIBETokenArtifact = await deployments.getArtifact("TRIBEToken");
   chainDeployment.TRIBEToken = { abi: TRIBETokenArtifact.abi, address: TRIBEToken.address };
-  return await getCommonDeployments(chainDeployment)
+  return await getCommonDeployments(chainDeployment);
 };
-
 
 export const getBscForkDeployments = async (): Promise<ChainDeployment> => {
   let chainDeployment: ChainDeployment = {};
@@ -139,9 +138,8 @@ export const getBscForkDeployments = async (): Promise<ChainDeployment> => {
     abi: CurveLpTokenLiquidatorNoRegistryArtifact.abi,
     address: CurveLpTokenLiquidatorNoRegistry.address,
   };
-  return await getCommonDeployments(chainDeployment)
+  return await getCommonDeployments(chainDeployment);
 };
-
 
 export const getOrCreateFuse = async (): Promise<Fuse> => {
   if (!fuseSdk) {
@@ -150,7 +148,7 @@ export const getOrCreateFuse = async (): Promise<Fuse> => {
     if (chainId === 1337) {
       chainDeployment = await getLocalDeployments();
     } else if (process.env.FORK_CHAIN_ID!) {
-      chainDeployment = await getBscForkDeployments()
+      chainDeployment = await getBscForkDeployments();
     }
     fuseSdk = new Fuse(ethers.provider, chainId, chainDeployment);
   }

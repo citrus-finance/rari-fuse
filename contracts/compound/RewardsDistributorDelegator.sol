@@ -7,11 +7,7 @@ contract RewardsDistributorDelegator is RewardsDistributorDelegatorStorage {
   /// @notice Emitted when implementation is changed
   event NewImplementation(address oldImplementation, address newImplementation);
 
-  constructor(
-    address admin_,
-    address rewardToken_,
-    address implementation_
-  ) {
+  constructor(address admin_, address rewardToken_, address implementation_) {
     // Admin set to msg.sender for initialization
     admin = msg.sender;
 

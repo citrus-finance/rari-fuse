@@ -31,11 +31,7 @@ library FixedPointMathLib {
                     LOW LEVEL FIXED POINT OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-  function mulDivDown(
-    uint256 x,
-    uint256 y,
-    uint256 denominator
-  ) internal pure returns (uint256 z) {
+  function mulDivDown(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
     assembly {
       // Store x * y in z for now.
       z := mul(x, y)
@@ -50,11 +46,7 @@ library FixedPointMathLib {
     }
   }
 
-  function mulDivUp(
-    uint256 x,
-    uint256 y,
-    uint256 denominator
-  ) internal pure returns (uint256 z) {
+  function mulDivUp(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
     assembly {
       // Store x * y in z for now.
       z := mul(x, y)
@@ -71,11 +63,7 @@ library FixedPointMathLib {
     }
   }
 
-  function rpow(
-    uint256 x,
-    uint256 n,
-    uint256 scalar
-  ) internal pure returns (uint256 z) {
+  function rpow(uint256 x, uint256 n, uint256 scalar) internal pure returns (uint256 z) {
     assembly {
       switch x
       case 0 {

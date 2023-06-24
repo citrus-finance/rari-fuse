@@ -37,7 +37,7 @@ contract BalancerLpTokenPriceOracle is IPriceOracle, BasePriceOracle, BNum {
     address underlying = ICErc20(address(cToken)).underlying();
     // Comptroller needs prices to be scaled by 1e(36 - decimals)
     // Since `_price` returns prices scaled by 18 decimals, we must scale them by 1e(36 - 18 - decimals)
-    return (_price(underlying) * 1e18) / (10**uint256(ERC20Upgradeable(underlying).decimals()));
+    return (_price(underlying) * 1e18) / (10 ** uint256(ERC20Upgradeable(underlying).decimals()));
   }
 
   /**
@@ -54,10 +54,10 @@ contract BalancerLpTokenPriceOracle is IPriceOracle, BasePriceOracle, BNum {
     uint256 pxB = BasePriceOracle(msg.sender).price(tokenB);
     uint8 decimalsA = ERC20Upgradeable(tokenA).decimals();
     uint8 decimalsB = ERC20Upgradeable(tokenB).decimals();
-    if (decimalsA < 18) pxA = pxA * (10**(18 - uint256(decimalsA)));
-    if (decimalsA > 18) pxA = pxA / (10**(uint256(decimalsA) - 18));
-    if (decimalsB < 18) pxB = pxB * (10**(18 - uint256(decimalsB)));
-    if (decimalsB > 18) pxB = pxB / (10**(uint256(decimalsB) - 18));
+    if (decimalsA < 18) pxA = pxA * (10 ** (18 - uint256(decimalsA)));
+    if (decimalsA > 18) pxA = pxA / (10 ** (uint256(decimalsA) - 18));
+    if (decimalsB < 18) pxB = pxB * (10 ** (18 - uint256(decimalsB)));
+    if (decimalsB > 18) pxB = pxB / (10 ** (uint256(decimalsB) - 18));
     (uint256 fairResA, uint256 fairResB) = computeFairReserves(
       pool.getBalance(tokenA),
       pool.getBalance(tokenB),

@@ -29,14 +29,7 @@ interface IComptroller {
 
   function checkMembership(address account, ICToken cToken) external view returns (bool);
 
-  function getAccountLiquidity(address account)
-    external
-    view
-    returns (
-      uint256,
-      uint256,
-      uint256
-    );
+  function getAccountLiquidity(address account) external view returns (uint256, uint256, uint256);
 
   function _setPriceOracle(IPriceOracle newOracle) external returns (uint256);
 

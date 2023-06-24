@@ -26,7 +26,7 @@ task("oracle:get-price", "Get price of token")
     const oracleModule = await import("../test/utils/oracle");
     const [tokenAddress, oracle] = await oracleModule.setUpOracleWithToken(_token, _address, ethers, getNamedAccounts);
     const tokenPriceMPO = await oracle.price(tokenAddress);
-    console.log('tokenPriceMPO: ', tokenPriceMPO.toString());
+    console.log("tokenPriceMPO: ", tokenPriceMPO.toString());
     console.log(`Price ${_token ? _token : _address}: ${ethers.utils.formatEther(tokenPriceMPO)}`);
     return tokenPriceMPO;
   });

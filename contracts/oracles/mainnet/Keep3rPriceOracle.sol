@@ -98,6 +98,7 @@ contract Keep3rPriceOracle is IPriceOracle, BasePriceOracle {
       return (currPx1Cumu - lastPx1Cumu) / (block.timestamp - lastTime); // overflow is desired
     }
   }
+
   /**
    * @dev Return the current price0 cumulative value on Uniswap.
    * Copied from: https://github.com/AlphaFinanceLab/homora-v2/blob/master/contracts/oracle/BaseKP3ROracle.sol
@@ -145,7 +146,7 @@ contract Keep3rPriceOracle is IPriceOracle, BasePriceOracle {
     address underlying = ICErc20(address(cToken)).underlying();
 
     // Get price, format, and return
-    uint256 baseUnit = 10**uint256(ERC20Upgradeable(underlying).decimals());
+    uint256 baseUnit = 10 ** uint256(ERC20Upgradeable(underlying).decimals());
     return (_price(underlying) * 1e18) / baseUnit;
   }
 
@@ -158,8 +159,8 @@ contract Keep3rPriceOracle is IPriceOracle, BasePriceOracle {
 
     // Call Keep3r for ERC20/ETH price and return
     address pair = uniswapV2Factory.getPair(underlying, WETH_ADDRESS);
-    uint256 baseUnit = 10**uint256(ERC20Upgradeable(underlying).decimals());
-    return (((underlying < WETH_ADDRESS ? price0TWAP(pair) : price1TWAP(pair)) / (2**56)) * baseUnit) / (2**56); // Scaled by 1e18, not 2 ** 112
+    uint256 baseUnit = 10 ** uint256(ERC20Upgradeable(underlying).decimals());
+    return (((underlying < WETH_ADDRESS ? price0TWAP(pair) : price1TWAP(pair)) / (2 ** 56)) * baseUnit) / (2 ** 56); // Scaled by 1e18, not 2 ** 112
   }
 
   /**

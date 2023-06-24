@@ -42,11 +42,7 @@ library PancakeLibrary {
   }
 
   // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
-  function quote(
-    uint256 amountA,
-    uint256 reserveA,
-    uint256 reserveB
-  ) internal pure returns (uint256 amountB) {
+  function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) internal pure returns (uint256 amountB) {
     require(amountA > 0, "PancakeLibrary: INSUFFICIENT_AMOUNT");
     require(reserveA > 0 && reserveB > 0, "PancakeLibrary: INSUFFICIENT_LIQUIDITY");
     amountB = (amountA * reserveB) / reserveA;

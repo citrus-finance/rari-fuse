@@ -274,11 +274,7 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
    * @param cToken The market in which the borrower is interacting
    * @param borrower The address of the borrower to distribute COMP to
    */
-  function distributeBorrowerComp(
-    address cToken,
-    address borrower,
-    Exp memory marketBorrowIndex
-  ) internal {
+  function distributeBorrowerComp(address cToken, address borrower, Exp memory marketBorrowIndex) internal {
     CompMarketState storage borrowState = compBorrowState[cToken];
     Double memory borrowIndex = Double({ mantissa: borrowState.index });
     Double memory borrowerIndex = Double({ mantissa: compBorrowerIndex[cToken][borrower] });
@@ -328,11 +324,7 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
    * @param src The account which sources the tokens
    * @param dst The account which receives the tokens
    */
-  function flywheelPreTransferAction(
-    address cToken,
-    address src,
-    address dst
-  ) external {
+  function flywheelPreTransferAction(address cToken, address src, address dst) external {
     if (compSupplyState[cToken].index > 0) {
       updateCompSupplyIndex(cToken);
       distributeSupplierComp(cToken, src);
@@ -383,12 +375,7 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
    * @param borrowers Whether or not to claim COMP earned by borrowing
    * @param suppliers Whether or not to claim COMP earned by supplying
    */
-  function claimRewards(
-    address[] memory holders,
-    CToken[] memory cTokens,
-    bool borrowers,
-    bool suppliers
-  ) public {
+  function claimRewards(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
     for (uint256 i = 0; i < cTokens.length; i++) {
       CToken cToken = cTokens[i];
       if (borrowers == true && compBorrowState[address(cToken)].index > 0) {

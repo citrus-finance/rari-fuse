@@ -39,11 +39,7 @@ interface IERC4626 is EIP20Interface {
       @param underlyingAmount The amount of the underlying token to withdraw.
       @return shares The shares in the vault burned from sender
     */
-  function withdraw(
-    address from,
-    address to,
-    uint256 underlyingAmount
-  ) external returns (uint256 shares);
+  function withdraw(address from, address to, uint256 underlyingAmount) external returns (uint256 shares);
 
   /**
       @notice Redeem a specific amount of shares for underlying tokens.
@@ -52,11 +48,7 @@ interface IERC4626 is EIP20Interface {
       @param shareAmount The amount of shares to redeem.
       @return value The underlying amount transferred to `to`.
     */
-  function redeem(
-    address from,
-    address to,
-    uint256 shareAmount
-  ) external returns (uint256 value);
+  function redeem(address from, address to, uint256 shareAmount) external returns (uint256 value);
 
   /*///////////////////////////////////////////////////////////////
                             View Functions

@@ -269,11 +269,7 @@ abstract contract CTokenInterface is CTokenStorage {
 
   function transfer(address dst, uint256 amount) external virtual returns (bool);
 
-  function transferFrom(
-    address src,
-    address dst,
-    uint256 amount
-  ) external virtual returns (bool);
+  function transferFrom(address src, address dst, uint256 amount) external virtual returns (bool);
 
   function approve(address spender, uint256 amount) external virtual returns (bool);
 
@@ -283,16 +279,7 @@ abstract contract CTokenInterface is CTokenStorage {
 
   function balanceOfUnderlying(address owner) external virtual returns (uint256);
 
-  function getAccountSnapshot(address account)
-    external
-    view
-    virtual
-    returns (
-      uint256,
-      uint256,
-      uint256,
-      uint256
-    );
+  function getAccountSnapshot(address account) external view virtual returns (uint256, uint256, uint256, uint256);
 
   function borrowRatePerBlock() external view virtual returns (uint256);
 
@@ -312,11 +299,7 @@ abstract contract CTokenInterface is CTokenStorage {
 
   function accrueInterest() public virtual returns (uint256);
 
-  function seize(
-    address liquidator,
-    address borrower,
-    uint256 seizeTokens
-  ) external virtual returns (uint256);
+  function seize(address liquidator, address borrower, uint256 seizeTokens) external virtual returns (uint256);
 
   /*** Admin Functions ***/
 

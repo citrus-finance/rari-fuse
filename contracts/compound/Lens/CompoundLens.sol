@@ -192,11 +192,7 @@ contract CompoundLens {
     bool executed;
   }
 
-  function setProposal(
-    GovProposal memory res,
-    GovernorAlpha governor,
-    uint256 proposalId
-  ) internal view {
+  function setProposal(GovProposal memory res, GovernorAlpha governor, uint256 proposalId) internal view {
     (
       ,
       address proposer,
@@ -219,11 +215,10 @@ contract CompoundLens {
     res.executed = executed;
   }
 
-  function getGovProposals(GovernorAlpha governor, uint256[] calldata proposalIds)
-    external
-    view
-    returns (GovProposal[] memory)
-  {
+  function getGovProposals(
+    GovernorAlpha governor,
+    uint256[] calldata proposalIds
+  ) external view returns (GovProposal[] memory) {
     GovProposal[] memory res = new GovProposal[](proposalIds.length);
     for (uint256 i = 0; i < proposalIds.length; i++) {
       (

@@ -76,11 +76,7 @@ contract ComptrollerErrorReporter {
   /**
    * @dev use this when reporting an opaque error from an upgradeable collaborator contract
    */
-  function failOpaque(
-    Error err,
-    FailureInfo info,
-    uint256 opaqueError
-  ) internal returns (uint256) {
+  function failOpaque(Error err, FailureInfo info, uint256 opaqueError) internal returns (uint256) {
     emit Failure(uint256(err), uint256(info), opaqueError);
 
     return uint256(err);
@@ -236,11 +232,7 @@ contract TokenErrorReporter {
   /**
    * @dev use this when reporting an opaque error from an upgradeable collaborator contract
    */
-  function failOpaque(
-    Error err,
-    FailureInfo info,
-    uint256 opaqueError
-  ) internal returns (uint256) {
+  function failOpaque(Error err, FailureInfo info, uint256 opaqueError) internal returns (uint256) {
     emit Failure(uint256(err), uint256(info), opaqueError);
 
     return err == Error.COMPTROLLER_REJECTION ? 1000 + opaqueError : uint256(err);

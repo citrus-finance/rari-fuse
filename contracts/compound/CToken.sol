@@ -99,12 +99,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param tokens The number of tokens to transfer
    * @return Whether or not the transfer succeeded
    */
-  function transferTokens(
-    address spender,
-    address src,
-    address dst,
-    uint256 tokens
-  ) internal returns (uint256) {
+  function transferTokens(address spender, address src, address dst, uint256 tokens) internal returns (uint256) {
     /* Fail if transfer not allowed */
     uint256 allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
     if (allowed != 0) {
@@ -184,11 +179,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param amount The number of tokens to transfer
    * @return Whether or not the transfer succeeded
    */
-  function transferFrom(
-    address src,
-    address dst,
-    uint256 amount
-  ) external override nonReentrant(false) returns (bool) {
+  function transferFrom(address src, address dst, uint256 amount) external override nonReentrant(false) returns (bool) {
     return transferTokens(msg.sender, src, dst, amount) == uint256(Error.NO_ERROR);
   }
 
@@ -245,17 +236,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param account Address of the account to snapshot
    * @return (possible error, token balance, borrow balance, exchange rate mantissa)
    */
-  function getAccountSnapshot(address account)
-    external
-    view
-    override
-    returns (
-      uint256,
-      uint256,
-      uint256,
-      uint256
-    )
-  {
+  function getAccountSnapshot(address account) external view override returns (uint256, uint256, uint256, uint256) {
     uint256 cTokenBalance = accountTokens[account];
     uint256 borrowBalance;
     uint256 exchangeRateMantissa;
@@ -692,11 +673,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens (only one of redeemTokensIn or redeemAmountIn may be non-zero)
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function redeemFresh(
-    address redeemer,
-    uint256 redeemTokensIn,
-    uint256 redeemAmountIn
-  ) internal returns (uint256) {
+  function redeemFresh(address redeemer, uint256 redeemTokensIn, uint256 redeemAmountIn) internal returns (uint256) {
     require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
 
     RedeemLocalVars memory vars;
@@ -931,11 +908,10 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param repayAmount The amount to repay
    * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
    */
-  function repayBorrowBehalfInternal(address borrower, uint256 repayAmount)
-    internal
-    nonReentrant(false)
-    returns (uint256, uint256)
-  {
+  function repayBorrowBehalfInternal(
+    address borrower,
+    uint256 repayAmount
+  ) internal nonReentrant(false) returns (uint256, uint256) {
     uint256 error = accrueInterest();
     if (error != uint256(Error.NO_ERROR)) {
       // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
@@ -963,11 +939,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param repayAmount the amount of undelrying tokens being returned
    * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
    */
-  function repayBorrowFresh(
-    address payer,
-    address borrower,
-    uint256 repayAmount
-  ) internal returns (uint256, uint256) {
+  function repayBorrowFresh(address payer, address borrower, uint256 repayAmount) internal returns (uint256, uint256) {
     /* Fail if repayBorrow not allowed */
     uint256 allowed = comptroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
     if (allowed != 0) {

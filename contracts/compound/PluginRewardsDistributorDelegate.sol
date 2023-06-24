@@ -145,11 +145,7 @@ contract PluginRewardsDistributorDelegate is RewardsDistributorDelegateStorageV1
    * @param src The account which sources the tokens
    * @param dst The account which receives the tokens
    */
-  function flywheelPreTransferAction(
-    address cToken,
-    address src,
-    address dst
-  ) external {
+  function flywheelPreTransferAction(address cToken, address src, address dst) external {
     if (compSupplyState[cToken].index > 0) {
       updateCompSupplyIndex(cToken);
       distributeSupplierComp(cToken, src);
@@ -183,12 +179,7 @@ contract PluginRewardsDistributorDelegate is RewardsDistributorDelegateStorageV1
    * @param borrowers Whether or not to claim COMP earned by borrowing
    * @param suppliers Whether or not to claim COMP earned by supplying
    */
-  function claimRewards(
-    address[] memory holders,
-    CToken[] memory cTokens,
-    bool borrowers,
-    bool suppliers
-  ) public {
+  function claimRewards(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
     for (uint256 i = 0; i < cTokens.length; i++) {
       CToken cToken = cTokens[i];
       if (suppliers == true && compSupplyState[address(cToken)].index > 0) {
