@@ -11,7 +11,7 @@ import {
 } from "../../typechain";
 import { createPool, deployAssets, DeployedAsset, getPoolAssets } from "./pool";
 import { expect } from "chai";
-import { cERC20Conf, ChainLiquidationConfig, Fuse } from "../../";
+import { cERC20Conf, ChainLiquidationConfig, Fuse } from "../../src";
 import { getOrCreateFuse } from "./fuseSdk";
 
 export const resetPriceOracle = async (erc20One, erc20Two) => {
