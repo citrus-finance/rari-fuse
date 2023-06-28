@@ -7,7 +7,6 @@ export const deployIRMs = async ({ ethers, getNamedAccounts, deployments, deploy
     from: deployer,
     salt: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(SALT)),
     args: [
-      deployConfig.blocksPerYear,
       "20000000000000000", // baseRatePerYear
       "180000000000000000", // multiplierPerYear
       "4000000000000000000", //jumpMultiplierPerYear
@@ -26,7 +25,6 @@ export const deployIRMs = async ({ ethers, getNamedAccounts, deployments, deploy
     from: deployer,
     salt: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(SALT)),
     args: [
-      deployConfig.blocksPerYear,
       "20000000000000000", // baseRatePerYear
       "100000000000000000", // multiplierPerYear
     ],

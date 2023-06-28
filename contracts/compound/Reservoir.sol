@@ -8,10 +8,10 @@ pragma solidity >=0.8.0;
  * @author Compound
  */
 contract Reservoir {
-  /// @notice The block number when the Reservoir started (immutable)
+  /// @notice The timestamp when the Reservoir started (immutable)
   uint256 public dripStart;
 
-  /// @notice Tokens per block that to drip to target (immutable)
+  /// @notice Tokens per second that to drip to target (immutable)
   uint256 public dripRate;
 
   /// @notice Reference to token to drip (immutable)
@@ -25,12 +25,12 @@ contract Reservoir {
 
   /**
    * @notice Constructs a Reservoir
-   * @param dripRate_ Numer of tokens per block to drip
+   * @param dripRate_ Numer of tokens per second to drip
    * @param token_ The token to drip
    * @param target_ The recipient of dripped tokens
    */
   constructor(uint256 dripRate_, EIP20Interface token_, address target_) {
-    dripStart = block.number;
+    dripStart = block.timestamp;
     dripRate = dripRate_;
     token = token_;
     target = target_;
@@ -50,10 +50,10 @@ contract Reservoir {
     uint256 dripStart_ = dripStart;
     uint256 dripped_ = dripped;
     address target_ = target;
-    uint256 blockNumber_ = block.number;
+    uint256 blockTimestamp = block.timestamp;
 
     // Next, calculate intermediate values
-    uint256 dripTotal_ = mul(dripRate_, blockNumber_ - dripStart_, "dripTotal overflow");
+    uint256 dripTotal_ = mul(dripRate_, blockTimestamp - dripStart_, "dripTotal overflow");
     uint256 deltaDrip_ = sub(dripTotal_, dripped_, "deltaDrip underflow");
     uint256 toDrip_ = min(reservoirBalance_, deltaDrip_);
     uint256 drippedNext_ = add(dripped_, toDrip_, "tautological");

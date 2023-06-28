@@ -16,10 +16,10 @@ contract DAIInterestRateModelV2 is JumpRateModel {
   using SafeMath for uint256;
 
   /**
-   * @notice The additional margin per block separating the base borrow rate from the roof (2% / block).
-   * Note that this value has been increased from the original value of 0.05% per block.
+   * @notice The additional margin per second separating the base borrow rate from the roof (2% / second).
+   * Note that this value has been increased from the original value of 0.05% per second.
    */
-  uint256 public gapPerBlock = 2e16 / blocksPerYear;
+  uint256 public constant gapPerSecond = 2e16 / uint256(365 days);
 
   /**
    * @notice The assumed (1 - reserve factor) used to calculate the minimum borrow rate (reserve factor = 0.05)
@@ -31,32 +31,29 @@ contract DAIInterestRateModelV2 is JumpRateModel {
 
   /**
    * @notice Construct an interest rate model
-   * @param _blocksPerYear The approximate number of blocks per year
-   * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
+   * @param jumpMultiplierPerYear The multiplierPerSecond after hitting a specified utilization point
    * @param kink_ The utilization point at which the jump multiplier is applied
    * @param pot_ The address of the Dai pot (where DSR is earned)
    * @param jug_ The address of the Dai jug (where SF is kept)
    */
   constructor(
-    uint256 _blocksPerYear,
     uint256 jumpMultiplierPerYear,
     uint256 kink_,
     address pot_,
     address jug_
-  ) JumpRateModel(_blocksPerYear, 0, 0, jumpMultiplierPerYear, kink_) {
-    blocksPerYear = _blocksPerYear;
+  ) JumpRateModel(0, 0, jumpMultiplierPerYear, kink_) {
     pot = PotLike(pot_);
     jug = JugLike(jug_);
     poke();
   }
 
   /**
-   * @notice Calculates the current supply interest rate per block including the Dai savings rate
+   * @notice Calculates the current supply interest rate per second including the Dai savings rate
    * @param cash The total amount of cash the market has
    * @param borrows The total amount of borrows the market has outstanding
    * @param reserves The total amnount of reserves the market has
    * @param reserveFactorMantissa The current reserve factor the market has
-   * @return The supply rate per block (as a percentage, and scaled by 1e18)
+   * @return The supply rate per second (as a percentage, and scaled by 1e18)
    */
   function getSupplyRate(
     uint256 cash,
@@ -70,37 +67,37 @@ contract DAIInterestRateModelV2 is JumpRateModel {
     if (underlying == 0) {
       return protocolRate;
     } else {
-      uint256 cashRate = cash.mul(dsrPerBlock()).div(underlying);
+      uint256 cashRate = cash.mul(dsrPerSecond()).div(underlying);
       return cashRate.add(protocolRate);
     }
   }
 
   /**
-   * @notice Calculates the Dai savings rate per block
-   * @return The Dai savings rate per block (as a percentage, and scaled by 1e18)
+   * @notice Calculates the Dai savings rate per second
+   * @return The Dai savings rate per second (as a percentage, and scaled by 1e18)
    */
-  function dsrPerBlock() public view returns (uint256) {
-    return pot.dsr().sub(1e27).div(1e9).mul(15); // scaled 1e27 aka RAY, and includes an extra "ONE" before subraction // descale to 1e18 // 15 seconds per block
+  function dsrPerSecond() public view returns (uint256) {
+    return pot.dsr().sub(1e27).div(1e9); // scaled 1e27 aka RAY, and includes an extra "ONE" before subraction // descale to 1e18
   }
 
   /**
-   * @notice Resets the baseRate and multiplier per block based on the stability fee and Dai savings rate
+   * @notice Resets the baseRate and multiplier per second based on the stability fee and Dai savings rate
    */
   function poke() public {
     (uint256 duty, ) = jug.ilks("ETH-A");
-    uint256 stabilityFeePerBlock = duty.add(jug.base()).sub(1e27).mul(1e18).div(1e27).mul(15);
+    uint256 stabilityFeePerSecond = duty.add(jug.base()).sub(1e27).mul(1e18).div(1e27);
 
     // We ensure the minimum borrow rate >= DSR / (1 - reserve factor)
-    baseRatePerBlock = dsrPerBlock().mul(1e18).div(assumedOneMinusReserveFactorMantissa);
+    baseRatePerSecond = dsrPerSecond().mul(1e18).div(assumedOneMinusReserveFactorMantissa);
 
     // The roof borrow rate is max(base rate, stability fee) + gap, from which we derive the slope
-    if (baseRatePerBlock < stabilityFeePerBlock) {
-      multiplierPerBlock = stabilityFeePerBlock.sub(baseRatePerBlock).add(gapPerBlock).mul(1e18).div(kink);
+    if (baseRatePerSecond < stabilityFeePerSecond) {
+      multiplierPerSecond = stabilityFeePerSecond.sub(baseRatePerSecond).add(gapPerSecond).mul(1e18).div(kink);
     } else {
-      multiplierPerBlock = gapPerBlock.mul(1e18).div(kink);
+      multiplierPerSecond = gapPerSecond.mul(1e18).div(kink);
     }
 
-    emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink);
+    emit NewInterestParams(baseRatePerSecond, multiplierPerSecond, jumpMultiplierPerSecond, kink);
   }
 }
 

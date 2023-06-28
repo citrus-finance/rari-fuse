@@ -148,7 +148,6 @@ export const deployConfig: ChainDeployConfig = {
   nativeTokenSymbol: "BNB",
   stableToken: assets.find((a) => a.symbol === "BUSD")!.underlying,
   wBTCToken: assets.find((a) => a.symbol === "BTCB")!.underlying,
-  blocksPerYear: 20 * 24 * 365 * 60,
   uniswap: {
     hardcoded: [],
     uniswapData: [{ lpDisplayName: "PancakeSwap", lpName: "Pancake LPs", lpSymbol: "Cake-LP" }],

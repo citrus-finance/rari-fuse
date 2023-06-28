@@ -49,7 +49,7 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
   event CompGranted(address recipient, uint256 amount);
 
   /// @notice The initial COMP index for a market
-  uint224 public constant compInitialIndex = 1e36;
+  uint216 public constant compInitialIndex = 1e36;
 
   /// @dev Intitializer to set admin to caller and set reward token
   function initialize(address _rewardToken) external {
@@ -142,7 +142,7 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
       if (compSupplyState[address(cToken)].index == 0) {
         compSupplyState[address(cToken)] = CompMarketState({
           index: compInitialIndex,
-          block: safe32(getBlockNumber(), "block number exceeds 32 bits")
+          timestamp: safe40(block.timestamp, "timestamp exceeds 40 bits")
         });
 
         // Add to allMarkets array if not already there
@@ -150,8 +150,8 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
           allMarkets.push(cToken);
         }
       } else {
-        // Update block number to ensure extra interest is not accrued during the prior period
-        compSupplyState[address(cToken)].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
+        // Update timestamp to ensure extra interest is not accrued during the prior period
+        compSupplyState[address(cToken)].timestamp = safe40(block.timestamp, "timestamp exceeds 40 bits");
       }
     }
 
@@ -180,7 +180,7 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
       if (compBorrowState[address(cToken)].index == 0) {
         compBorrowState[address(cToken)] = CompMarketState({
           index: compInitialIndex,
-          block: safe32(getBlockNumber(), "block number exceeds 32 bits")
+          timestamp: safe40(block.timestamp, "timestamp exceeds 40 bits")
         });
 
         // Add to allMarkets array if not already there
@@ -188,8 +188,8 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
           allMarkets.push(cToken);
         }
       } else {
-        // Update block number to ensure extra interest is not accrued during the prior period
-        compBorrowState[address(cToken)].block = safe32(getBlockNumber(), "block number exceeds 32 bits");
+        // Update timestamp to ensure extra interest is not accrued during the prior period
+        compBorrowState[address(cToken)].timestamp = safe40(block.timestamp, "timestamp exceeds 40 bits");
       }
     }
 
@@ -206,19 +206,19 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
   function updateCompSupplyIndex(address cToken) internal {
     CompMarketState storage supplyState = compSupplyState[cToken];
     uint256 supplySpeed = compSupplySpeeds[cToken];
-    uint256 blockNumber = getBlockNumber();
-    uint256 deltaBlocks = sub_(blockNumber, uint256(supplyState.block));
-    if (deltaBlocks > 0 && supplySpeed > 0) {
+    uint256 timestamp = block.timestamp;
+    uint256 deltaSeconds = sub_(timestamp, uint256(supplyState.timestamp));
+    if (deltaSeconds > 0 && supplySpeed > 0) {
       uint256 supplyTokens = CToken(cToken).totalSupply();
-      uint256 compAccrued_ = mul_(deltaBlocks, supplySpeed);
+      uint256 compAccrued_ = mul_(deltaSeconds, supplySpeed);
       Double memory ratio = supplyTokens > 0 ? fraction(compAccrued_, supplyTokens) : Double({ mantissa: 0 });
       Double memory index = add_(Double({ mantissa: supplyState.index }), ratio);
       compSupplyState[cToken] = CompMarketState({
-        index: safe224(index.mantissa, "new index exceeds 224 bits"),
-        block: safe32(blockNumber, "block number exceeds 32 bits")
+        index: safe216(index.mantissa, "new index exceeds 216 bits"),
+        timestamp: safe40(timestamp, "timestamp exceeds 40 bits")
       });
-    } else if (deltaBlocks > 0 && supplyState.index > 0) {
-      supplyState.block = safe32(blockNumber, "block number exceeds 32 bits");
+    } else if (deltaSeconds > 0 && supplyState.index > 0) {
+      supplyState.timestamp = safe40(timestamp, "timestamp exceeds 40 bits");
     }
   }
 
@@ -229,19 +229,19 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
   function updateCompBorrowIndex(address cToken, Exp memory marketBorrowIndex) internal {
     CompMarketState storage borrowState = compBorrowState[cToken];
     uint256 borrowSpeed = compBorrowSpeeds[cToken];
-    uint256 blockNumber = getBlockNumber();
-    uint256 deltaBlocks = sub_(blockNumber, uint256(borrowState.block));
-    if (deltaBlocks > 0 && borrowSpeed > 0) {
+    uint256 timestamp = block.timestamp;
+    uint256 deltaSeconds = sub_(timestamp, uint256(borrowState.timestamp));
+    if (deltaSeconds > 0 && borrowSpeed > 0) {
       uint256 borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
-      uint256 compAccrued_ = mul_(deltaBlocks, borrowSpeed);
+      uint256 compAccrued_ = mul_(deltaSeconds, borrowSpeed);
       Double memory ratio = borrowAmount > 0 ? fraction(compAccrued_, borrowAmount) : Double({ mantissa: 0 });
       Double memory index = add_(Double({ mantissa: borrowState.index }), ratio);
       compBorrowState[cToken] = CompMarketState({
-        index: safe224(index.mantissa, "new index exceeds 224 bits"),
-        block: safe32(blockNumber, "block number exceeds 32 bits")
+        index: safe216(index.mantissa, "new index exceeds 216 bits"),
+        timestamp: safe40(timestamp, "timestamp exceeds 40 bits")
       });
-    } else if (deltaBlocks > 0 && borrowState.index > 0) {
-      borrowState.block = safe32(blockNumber, "block number exceeds 32 bits");
+    } else if (deltaSeconds > 0 && borrowState.index > 0) {
+      borrowState.timestamp = safe40(timestamp, "timestamp exceeds 40 bits");
     }
   }
 
@@ -338,14 +338,14 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
    */
   function updateContributorRewards(address contributor) public {
     uint256 compSpeed = compContributorSpeeds[contributor];
-    uint256 blockNumber = getBlockNumber();
-    uint256 deltaBlocks = sub_(blockNumber, lastContributorBlock[contributor]);
-    if (deltaBlocks > 0 && compSpeed > 0) {
-      uint256 newAccrued = mul_(deltaBlocks, compSpeed);
+    uint256 timestamp = block.timestamp;
+    uint256 deltaSeconds = sub_(timestamp, lastContributorTimestamp[contributor]);
+    if (deltaSeconds > 0 && compSpeed > 0) {
+      uint256 newAccrued = mul_(deltaSeconds, compSpeed);
       uint256 contributorAccrued = add_(compAccrued[contributor], newAccrued);
 
       compAccrued[contributor] = contributorAccrued;
-      lastContributorBlock[contributor] = blockNumber;
+      lastContributorTimestamp[contributor] = timestamp;
     }
   }
 
@@ -486,9 +486,9 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
     updateContributorRewards(contributor);
     if (compSpeed == 0) {
       // release storage
-      delete lastContributorBlock[contributor];
+      delete lastContributorTimestamp[contributor];
     } else {
-      lastContributorBlock[contributor] = getBlockNumber();
+      lastContributorTimestamp[contributor] = block.timestamp;
     }
     compContributorSpeeds[contributor] = compSpeed;
 
@@ -496,10 +496,6 @@ contract RewardsDistributorDelegate is RewardsDistributorDelegateStorageV1, Expo
   }
 
   /*** Helper Functions */
-
-  function getBlockNumber() public view returns (uint256) {
-    return block.number;
-  }
 
   /**
    * @notice Returns an array of all markets.

@@ -9,17 +9,17 @@ export default class JumpRateModel implements InterestRateModel {
   static RUNTIME_BYTECODE_HASH = utils.keccak256(JumpRateModelArtifact.deployedBytecode.object);
 
   initialized: boolean | undefined;
-  baseRatePerBlock: BigNumber | undefined;
-  multiplierPerBlock: BigNumber | undefined;
-  jumpMultiplierPerBlock: BigNumber | undefined;
+  baseRatePerSecond: BigNumber | undefined;
+  multiplierPerSecond: BigNumber | undefined;
+  jumpMultiplierPerSecond: BigNumber | undefined;
   kink: BigNumber | undefined;
   reserveFactorMantissa: BigNumber | undefined;
 
   async init(interestRateModelAddress: string, assetAddress: string, provider: Web3Provider): Promise<void> {
     const jumpRateModelContract = new Contract(interestRateModelAddress, JumpRateModelArtifact.abi, provider);
-    this.baseRatePerBlock = BigNumber.from(await jumpRateModelContract.callStatic.baseRatePerBlock());
-    this.multiplierPerBlock = BigNumber.from(await jumpRateModelContract.callStatic.multiplierPerBlock());
-    this.jumpMultiplierPerBlock = BigNumber.from(await jumpRateModelContract.callStatic.jumpMultiplierPerBlock());
+    this.baseRatePerSecond = BigNumber.from(await jumpRateModelContract.callStatic.baseRatePerSecond());
+    this.multiplierPerSecond = BigNumber.from(await jumpRateModelContract.callStatic.multiplierPerSecond());
+    this.jumpMultiplierPerSecond = BigNumber.from(await jumpRateModelContract.callStatic.jumpMultiplierPerSecond());
     this.kink = BigNumber.from(await jumpRateModelContract.callStatic.kink());
 
     const cTokenContract = new Contract(assetAddress, CTokenInterfacesArtifact.abi, provider);
@@ -41,9 +41,9 @@ export default class JumpRateModel implements InterestRateModel {
     provider: Web3Provider
   ): Promise<void> {
     const jumpRateModelContract = new Contract(interestRateModelAddress, JumpRateModelArtifact.abi, provider);
-    this.baseRatePerBlock = BigNumber.from(await jumpRateModelContract.callStatic.baseRatePerBlock());
-    this.multiplierPerBlock = BigNumber.from(await jumpRateModelContract.callStatic.multiplierPerBlock());
-    this.jumpMultiplierPerBlock = BigNumber.from(await jumpRateModelContract.callStatic.jumpMultiplierPerBlock());
+    this.baseRatePerSecond = BigNumber.from(await jumpRateModelContract.callStatic.baseRatePerSecond());
+    this.multiplierPerSecond = BigNumber.from(await jumpRateModelContract.callStatic.multiplierPerSecond());
+    this.jumpMultiplierPerSecond = BigNumber.from(await jumpRateModelContract.callStatic.jumpMultiplierPerSecond());
     this.kink = BigNumber.from(await jumpRateModelContract.callStatic.kink());
 
     this.reserveFactorMantissa = BigNumber.from(reserveFactorMantissa);
@@ -54,17 +54,17 @@ export default class JumpRateModel implements InterestRateModel {
   }
 
   async __init(
-    baseRatePerBlock: BigNumberish,
-    multiplierPerBlock: BigNumberish,
-    jumpMultiplierPerBlock: BigNumberish,
+    baseRatePerSecond: BigNumberish,
+    multiplierPerSecond: BigNumberish,
+    jumpMultiplierPerSecond: BigNumberish,
     kink: BigNumberish,
     reserveFactorMantissa: BigNumberish,
     adminFeeMantissa: BigNumberish,
     fuseFeeMantissa: BigNumberish
   ) {
-    this.baseRatePerBlock = BigNumber.from(baseRatePerBlock);
-    this.multiplierPerBlock = BigNumber.from(multiplierPerBlock);
-    this.jumpMultiplierPerBlock = BigNumber.from(jumpMultiplierPerBlock);
+    this.baseRatePerSecond = BigNumber.from(baseRatePerSecond);
+    this.multiplierPerSecond = BigNumber.from(multiplierPerSecond);
+    this.jumpMultiplierPerSecond = BigNumber.from(jumpMultiplierPerSecond);
     this.kink = BigNumber.from(kink);
 
     this.reserveFactorMantissa = BigNumber.from(reserveFactorMantissa);
@@ -78,17 +78,17 @@ export default class JumpRateModel implements InterestRateModel {
     if (
       !this.initialized ||
       !this.kink ||
-      !this.multiplierPerBlock ||
-      !this.baseRatePerBlock ||
-      !this.jumpMultiplierPerBlock
+      !this.multiplierPerSecond ||
+      !this.baseRatePerSecond ||
+      !this.jumpMultiplierPerSecond
     )
       throw new Error("Interest rate model class not initialized.");
     if (utilizationRate.lte(this.kink)) {
-      return utilizationRate.mul(this.multiplierPerBlock).div(utils.parseEther("1")).add(this.baseRatePerBlock);
+      return utilizationRate.mul(this.multiplierPerSecond).div(utils.parseEther("1")).add(this.baseRatePerSecond);
     } else {
-      const normalRate = this.kink.mul(this.multiplierPerBlock).div(utils.parseEther("1")).add(this.baseRatePerBlock);
+      const normalRate = this.kink.mul(this.multiplierPerSecond).div(utils.parseEther("1")).add(this.baseRatePerSecond);
       const excessUtil = utilizationRate.sub(this.kink);
-      return excessUtil.mul(this.jumpMultiplierPerBlock).div(utils.parseEther("1")).add(normalRate);
+      return excessUtil.mul(this.jumpMultiplierPerSecond).div(utils.parseEther("1")).add(normalRate);
     }
   }
 

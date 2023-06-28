@@ -13,28 +13,6 @@ export enum SupportedChains {
   moonbase_alpha = 1287,
 }
 
-export const chainSpecificParams = {
-  [SupportedChains.ganache]: {
-    blocksPerYear: BigNumber.from((4 * 24 * 365 * 60).toString()),
-  },
-  [SupportedChains.chapel]: {
-    blocksPerYear: BigNumber.from((4 * 24 * 365 * 60).toString()),
-  },
-  [SupportedChains.bsc]: {
-    blocksPerYear: BigNumber.from((4 * 24 * 365 * 60).toString()),
-  },
-  // TODO: not sure if this is correct
-  [SupportedChains.evmos_testnet]: {
-    blocksPerYear: BigNumber.from((4 * 24 * 365 * 60).toString()),
-  },
-  [SupportedChains.moonbeam]: {
-    blocksPerYear: BigNumber.from((5 * 24 * 365 * 60).toString()),
-  },
-  [SupportedChains.moonbase_alpha]: {
-    blocksPerYear: BigNumber.from((5 * 24 * 365 * 60).toString()),
-  },
-};
-
 export const chainSpecificAddresses = {
   [SupportedChains.ganache]: {
     DAI_POT: "0x197e90f9fad81970ba7976f33cbd77088e5d7cf7",

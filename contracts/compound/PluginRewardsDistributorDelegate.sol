@@ -29,7 +29,7 @@ contract PluginRewardsDistributorDelegate is RewardsDistributorDelegateStorageV1
   );
 
   /// @notice The initial COMP index for a market
-  uint224 public constant compInitialIndex = 1e36;
+  uint216 public constant compInitialIndex = 1e36;
 
   /// @dev Intitializer to set admin to caller and set reward token
   function initialize(address _rewardToken) external {
@@ -74,8 +74,8 @@ contract PluginRewardsDistributorDelegate is RewardsDistributorDelegateStorageV1
       Double memory ratio = supplyTokens > 0 ? fraction(compAccrued_, supplyTokens) : Double({ mantissa: 0 });
       Double memory index = add_(Double({ mantissa: supplyState.index }), ratio);
       compSupplyState[cToken] = CompMarketState({
-        index: safe224(index.mantissa, "new index exceeds 224 bits"),
-        block: 0
+        index: safe216(index.mantissa, "new index exceeds 216 bits"),
+        timestamp: 0
       });
     }
   }
@@ -86,7 +86,7 @@ contract PluginRewardsDistributorDelegate is RewardsDistributorDelegateStorageV1
    */
   function _addMarketForRewards(address cToken) public {
     require(msg.sender == admin, "only admin can set comp speed");
-    compSupplyState[cToken] = CompMarketState({ index: compInitialIndex, block: 0 });
+    compSupplyState[cToken] = CompMarketState({ index: compInitialIndex, timestamp: 0 });
 
     // Add to allMarkets array
     allMarkets.push(CToken(cToken));

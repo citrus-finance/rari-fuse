@@ -23,12 +23,12 @@ contract GovernorAlpha {
   /// @notice The delay before voting on a proposal may take place, once proposed
   function votingDelay() public pure returns (uint256) {
     return 1;
-  } // 1 block
+  } // 1 second
 
-  /// @notice The duration of voting on a proposal, in blocks
+  /// @notice The duration of voting on a proposal, in seconds
   function votingPeriod() public pure returns (uint256) {
-    return 17280;
-  } // ~3 days in blocks (assuming 15s blocks)
+    return 3 days;
+  }
 
   /// @notice The address of the Compound Protocol Timelock
   TimelockInterface public timelock;
@@ -57,10 +57,10 @@ contract GovernorAlpha {
     string[] signatures;
     // The ordered list of calldata to be passed to each call
     bytes[] calldatas;
-    // The block at which voting begins: holders must delegate their votes prior to this block
-    uint256 startBlock;
-    // The block at which voting ends: votes must be cast prior to this block
-    uint256 endBlock;
+    // The timestamp at which voting begins: holders must delegate their votes prior to this timestamp
+    uint256 startTimestamp;
+    // The timestamp at which voting ends: votes must be cast prior to this timestamp
+    uint256 endTimestamp;
     // Current number of votes in favor of this proposal
     uint256 forVotes;
     // Current number of votes in opposition to this proposal
@@ -116,8 +116,8 @@ contract GovernorAlpha {
     uint256[] values,
     string[] signatures,
     bytes[] calldatas,
-    uint256 startBlock,
-    uint256 endBlock,
+    uint256 startTimestamp,
+    uint256 endTimestamp,
     string description
   );
 
@@ -147,7 +147,7 @@ contract GovernorAlpha {
     string memory description
   ) public returns (uint256) {
     require(
-      comp.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(),
+      comp.getPriorVotes(msg.sender, sub256(block.timestamp, 1)) > proposalThreshold(),
       "GovernorAlpha::propose: proposer votes below proposal threshold"
     );
     require(
@@ -170,8 +170,8 @@ contract GovernorAlpha {
       );
     }
 
-    uint256 startBlock = add256(block.number, votingDelay());
-    uint256 endBlock = add256(startBlock, votingPeriod());
+    uint256 startTimestamp = add256(block.timestamp, votingDelay());
+    uint256 endTimestamp = add256(startTimestamp, votingPeriod());
 
     proposalCount++;
     Proposal storage newProposal = proposals[proposalCount];
@@ -182,8 +182,8 @@ contract GovernorAlpha {
     newProposal.values = values;
     newProposal.signatures = signatures;
     newProposal.calldatas = calldatas;
-    newProposal.startBlock = startBlock;
-    newProposal.endBlock = endBlock;
+    newProposal.startTimestamp = startTimestamp;
+    newProposal.endTimestamp = endTimestamp;
     newProposal.forVotes = 0;
     newProposal.againstVotes = 0;
     newProposal.canceled = false;
@@ -198,8 +198,8 @@ contract GovernorAlpha {
       values,
       signatures,
       calldatas,
-      startBlock,
-      endBlock,
+      startTimestamp,
+      endTimestamp,
       description
     );
     return newProposal.id;
@@ -258,7 +258,7 @@ contract GovernorAlpha {
 
     Proposal storage proposal = proposals[proposalId];
     require(
-      msg.sender == guardian || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(),
+      msg.sender == guardian || comp.getPriorVotes(proposal.proposer, sub256(block.timestamp, 1)) < proposalThreshold(),
       "GovernorAlpha::cancel: proposer above threshold"
     );
 
@@ -296,9 +296,9 @@ contract GovernorAlpha {
     Proposal storage proposal = proposals[proposalId];
     if (proposal.canceled) {
       return ProposalState.Canceled;
-    } else if (block.number <= proposal.startBlock) {
+    } else if (block.timestamp <= proposal.startTimestamp) {
       return ProposalState.Pending;
-    } else if (block.number <= proposal.endBlock) {
+    } else if (block.timestamp <= proposal.endTimestamp) {
       return ProposalState.Active;
     } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes()) {
       return ProposalState.Defeated;
@@ -333,7 +333,7 @@ contract GovernorAlpha {
     Proposal storage proposal = proposals[proposalId];
     Receipt storage receipt = proposal.receipts[voter];
     require(receipt.hasVoted == false, "GovernorAlpha::_castVote: voter already voted");
-    uint96 votes = comp.getPriorVotes(voter, proposal.startBlock);
+    uint96 votes = comp.getPriorVotes(voter, proposal.startTimestamp);
 
     if (support) {
       proposal.forVotes = add256(proposal.forVotes, votes);
@@ -423,5 +423,5 @@ interface TimelockInterface {
 }
 
 interface CompInterface {
-  function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
+  function getPriorVotes(address account, uint256 blockTimestamp) external view returns (uint96);
 }

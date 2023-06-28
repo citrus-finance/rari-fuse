@@ -7,7 +7,6 @@ export const deployConfig: ChainDeployConfig = {
   wtoken: "0xA30404AFB4c43D25542687BCF4367F59cc77b5d2",
   nativeTokenName: "Evmos (Testnet)",
   nativeTokenSymbol: "TEVMOS",
-  blocksPerYear: 12 * 24 * 365 * 60, // 5 second blocks, 12 blocks per minute
   uniswap: {
     hardcoded: [],
     uniswapData: [],

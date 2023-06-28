@@ -9,8 +9,8 @@ export default class WhitePaperInterestRateModel implements InterestRateModel {
   static RUNTIME_BYTECODE_HASH = utils.keccak256(WhitePaperInterestRateModelArtifact.deployedBytecode.object);
 
   initialized: boolean | undefined;
-  baseRatePerBlock: BigNumber | undefined;
-  multiplierPerBlock: BigNumber | undefined;
+  baseRatePerSecond: BigNumber | undefined;
+  multiplierPerSecond: BigNumber | undefined;
   reserveFactorMantissa: BigNumber | undefined;
 
   async init(interestRateModelAddress: string, assetAddress: string, provider: any) {
@@ -20,8 +20,8 @@ export default class WhitePaperInterestRateModel implements InterestRateModel {
       provider
     );
 
-    this.baseRatePerBlock = BigNumber.from(await whitePaperModelContract.callStatic.baseRatePerBlock());
-    this.multiplierPerBlock = BigNumber.from(await whitePaperModelContract.callStatic.multiplierPerBlock());
+    this.baseRatePerSecond = BigNumber.from(await whitePaperModelContract.callStatic.baseRatePerSecond());
+    this.multiplierPerSecond = BigNumber.from(await whitePaperModelContract.callStatic.multiplierPerSecond());
 
     const cTokenContract = new Contract(assetAddress, CTokenInterfacesArtifact.abi, provider);
     this.reserveFactorMantissa = BigNumber.from(await cTokenContract.callStatic.reserveFactorMantissa());
@@ -55,8 +55,8 @@ export default class WhitePaperInterestRateModel implements InterestRateModel {
       provider
     );
 
-    this.baseRatePerBlock = BigNumber.from(await whitePaperModelContract.callStatic.baseRatePerBlock());
-    this.multiplierPerBlock = BigNumber.from(await whitePaperModelContract.callStatic.multiplierPerBlock());
+    this.baseRatePerSecond = BigNumber.from(await whitePaperModelContract.callStatic.baseRatePerSecond());
+    this.multiplierPerSecond = BigNumber.from(await whitePaperModelContract.callStatic.multiplierPerSecond());
 
     this.reserveFactorMantissa = BigNumber.from(reserveFactorMantissa);
     this.reserveFactorMantissa = this.reserveFactorMantissa.add(BigNumber.from(adminFeeMantissa));
@@ -66,14 +66,14 @@ export default class WhitePaperInterestRateModel implements InterestRateModel {
   }
 
   async __init(
-    baseRatePerBlock: BigNumberish,
-    multiplierPerBlock: BigNumberish,
+    baseRatePerSecond: BigNumberish,
+    multiplierPerSecond: BigNumberish,
     reserveFactorMantissa: BigNumberish,
     adminFeeMantissa: BigNumberish,
     fuseFeeMantissa: BigNumberish
   ) {
-    this.baseRatePerBlock = BigNumber.from(baseRatePerBlock);
-    this.multiplierPerBlock = BigNumber.from(multiplierPerBlock);
+    this.baseRatePerSecond = BigNumber.from(baseRatePerSecond);
+    this.multiplierPerSecond = BigNumber.from(multiplierPerSecond);
 
     this.reserveFactorMantissa = BigNumber.from(reserveFactorMantissa);
     this.reserveFactorMantissa = this.reserveFactorMantissa.add(BigNumber.from(adminFeeMantissa));
@@ -82,9 +82,9 @@ export default class WhitePaperInterestRateModel implements InterestRateModel {
   }
 
   getBorrowRate(utilizationRate: BigNumber) {
-    if (!this.initialized || !this.multiplierPerBlock || !this.baseRatePerBlock)
+    if (!this.initialized || !this.multiplierPerSecond || !this.baseRatePerSecond)
       throw new Error("Interest rate model class not initialized.");
-    return utilizationRate.mul(this.multiplierPerBlock).div(constants.WeiPerEther).add(this.baseRatePerBlock);
+    return utilizationRate.mul(this.multiplierPerSecond).div(constants.WeiPerEther).add(this.baseRatePerSecond);
   }
 
   getSupplyRate(utilizationRate: BigNumber): BigNumber {

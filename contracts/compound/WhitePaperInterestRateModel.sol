@@ -12,34 +12,28 @@ import "./SafeMath.sol";
 contract WhitePaperInterestRateModel is InterestRateModel {
   using SafeMath for uint256;
 
-  event NewInterestParams(uint256 baseRatePerBlock, uint256 multiplierPerBlock);
-
-  /**
-   * @notice The approximate number of blocks per year that is assumed by the interest rate model
-   */
-  uint256 public blocksPerYear;
+  event NewInterestParams(uint256 baseRatePerSecond, uint256 multiplierPerSecond);
 
   /**
    * @notice The multiplier of utilization rate that gives the slope of the interest rate
    */
-  uint256 public multiplierPerBlock;
+  uint256 public multiplierPerSecond;
 
   /**
    * @notice The base interest rate which is the y-intercept when utilization rate is 0
    */
-  uint256 public baseRatePerBlock;
+  uint256 public baseRatePerSecond;
 
   /**
    * @notice Construct an interest rate model
    * @param baseRatePerYear The approximate target base APR, as a mantissa (scaled by 1e18)
    * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by 1e18)
    */
-  constructor(uint256 _blocksPerYear, uint256 baseRatePerYear, uint256 multiplierPerYear) {
-    blocksPerYear = _blocksPerYear;
-    baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
-    multiplierPerBlock = multiplierPerYear.div(blocksPerYear);
+  constructor(uint256 baseRatePerYear, uint256 multiplierPerYear) {
+    baseRatePerSecond = baseRatePerYear.div(365 days);
+    multiplierPerSecond = multiplierPerYear.div(365 days);
 
-    emit NewInterestParams(baseRatePerBlock, multiplierPerBlock);
+    emit NewInterestParams(baseRatePerSecond, multiplierPerSecond);
   }
 
   /**
@@ -51,33 +45,32 @@ contract WhitePaperInterestRateModel is InterestRateModel {
    */
   function utilizationRate(uint256 cash, uint256 borrows, uint256 reserves) public pure returns (uint256) {
     // Utilization rate is 0 when there are no borrows
-    // if (borrows == 0) {
-    //   return 0;
-    // }
+    if (borrows == 0) {
+      return 0;
+    }
 
-    // return borrows.mul(1e18).div(cash.add(borrows).sub(reserves));
-    return 0;
+    return borrows.mul(1e18).div(cash.add(borrows).sub(reserves));
   }
 
   /**
-   * @notice Calculates the current borrow rate per block, with the error code expected by the market
+   * @notice Calculates the current borrow rate per sedond, with the error code expected by the market
    * @param cash The amount of cash in the market
    * @param borrows The amount of borrows in the market
    * @param reserves The amount of reserves in the market
-   * @return The borrow rate percentage per block as a mantissa (scaled by 1e18)
+   * @return The borrow rate percentage per second as a mantissa (scaled by 1e18)
    */
   function getBorrowRate(uint256 cash, uint256 borrows, uint256 reserves) public view override returns (uint256) {
     uint256 ur = utilizationRate(cash, borrows, reserves);
-    return ur.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
+    return ur.mul(multiplierPerSecond).div(1e18).add(baseRatePerSecond);
   }
 
   /**
-   * @notice Calculates the current supply rate per block
+   * @notice Calculates the current supply rate per second
    * @param cash The amount of cash in the market
    * @param borrows The amount of borrows in the market
    * @param reserves The amount of reserves in the market
    * @param reserveFactorMantissa The current reserve factor for the market
-   * @return The supply rate percentage per block as a mantissa (scaled by 1e18)
+   * @return The supply rate percentage per second as a mantissa (scaled by 1e18)
    */
   function getSupplyRate(
     uint256 cash,

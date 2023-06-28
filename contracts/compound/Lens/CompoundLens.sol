@@ -12,8 +12,8 @@ contract CompoundLens {
   struct CTokenMetadata {
     address cToken;
     uint256 exchangeRateCurrent;
-    uint256 supplyRatePerBlock;
-    uint256 borrowRatePerBlock;
+    uint256 supplyRatePerSecond;
+    uint256 borrowRatePerSecond;
     uint256 reserveFactorMantissa;
     uint256 totalBorrows;
     uint256 totalReserves;
@@ -46,8 +46,8 @@ contract CompoundLens {
       CTokenMetadata({
         cToken: address(cToken),
         exchangeRateCurrent: exchangeRateCurrent,
-        supplyRatePerBlock: cToken.supplyRatePerBlock(),
-        borrowRatePerBlock: cToken.borrowRatePerBlock(),
+        supplyRatePerSecond: cToken.supplyRatePerSecond(),
+        borrowRatePerSecond: cToken.borrowRatePerSecond(),
         reserveFactorMantissa: cToken.reserveFactorMantissa(),
         totalBorrows: cToken.totalBorrows(),
         totalReserves: cToken.totalReserves(),
@@ -184,8 +184,8 @@ contract CompoundLens {
     uint256[] values;
     string[] signatures;
     bytes[] calldatas;
-    uint256 startBlock;
-    uint256 endBlock;
+    uint256 startTimestamp;
+    uint256 endTimestamp;
     uint256 forVotes;
     uint256 againstVotes;
     bool canceled;
@@ -197,8 +197,8 @@ contract CompoundLens {
       ,
       address proposer,
       uint256 eta,
-      uint256 startBlock,
-      uint256 endBlock,
+      uint256 startTimestamp,
+      uint256 endTimestamp,
       uint256 forVotes,
       uint256 againstVotes,
       bool canceled,
@@ -207,8 +207,8 @@ contract CompoundLens {
     res.proposalId = proposalId;
     res.proposer = proposer;
     res.eta = eta;
-    res.startBlock = startBlock;
-    res.endBlock = endBlock;
+    res.startTimestamp = startTimestamp;
+    res.endTimestamp = endTimestamp;
     res.forVotes = forVotes;
     res.againstVotes = againstVotes;
     res.canceled = canceled;
@@ -235,8 +235,8 @@ contract CompoundLens {
         values: values,
         signatures: signatures,
         calldatas: calldatas,
-        startBlock: 0,
-        endBlock: 0,
+        startTimestamp: 0,
+        endTimestamp: 0,
         forVotes: 0,
         againstVotes: 0,
         canceled: false,
@@ -263,20 +263,20 @@ contract CompoundLens {
   }
 
   struct CompVotes {
-    uint256 blockNumber;
+    uint256 timestamp;
     uint256 votes;
   }
 
   function getCompVotes(
     Comp comp,
     address account,
-    uint32[] calldata blockNumbers
+    uint32[] calldata timestamps
   ) external view returns (CompVotes[] memory) {
-    CompVotes[] memory res = new CompVotes[](blockNumbers.length);
-    for (uint256 i = 0; i < blockNumbers.length; i++) {
+    CompVotes[] memory res = new CompVotes[](timestamps.length);
+    for (uint256 i = 0; i < timestamps.length; i++) {
       res[i] = CompVotes({
-        blockNumber: uint256(blockNumbers[i]),
-        votes: uint256(comp.getPriorVotes(account, blockNumbers[i]))
+        timestamp: uint256(timestamps[i]),
+        votes: uint256(comp.getPriorVotes(account, timestamps[i]))
       });
     }
     return res;

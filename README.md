@@ -1,6 +1,13 @@
-# Contracts
+# Rari Fuse
 
-Main repository for Midas Capital's contracts and SDK for interacting with those.
+Repository for Citrus Finance lending contract. The code is a fork of [Midas Capital's repository](https://github.com/Midas-Protocol/contracts/) which itself is a fork of Fuse by Rari Capital.
+
+The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publications/blob/master/Midas%20Audit%20Report.pdf) and any code after commit [6067ac7964f480675d02542782031117b437b55d](https://github.com/citrus-finance/rari-fuse/commit/6067ac7964f480675d02542782031117b437b55d) should be considered unaudited. Any changes will be listed bellow with an explaination and possible consequences.
+
+## Changes:
+
+- Changed `block.number` to `block.timestamp` for rewards distribution and interest rates so it's can run on blockchains with different or variable blocktime
+  - The miner can now trigger a liquidation on their own term because they have a bit of control over the timestamp. It shouldn't matter as miners already had control over the liquidation when they prioritise their own liquidation transaction. As long as liquidation are happening, this change should not be an issue.
 
 ## Structure
 

@@ -26,9 +26,9 @@ contract RewardsDistributorDelegateStorageV1 is RewardsDistributorDelegatorStora
 
   struct CompMarketState {
     // The market's last updated compBorrowIndex or compSupplyIndex
-    uint224 index;
-    // The block number the index was last updated at
-    uint32 block;
+    uint216 index;
+    // The block timestamp the index was last updated at
+    uint40 timestamp;
   }
 
   /// @notice A list of all markets
@@ -55,9 +55,9 @@ contract RewardsDistributorDelegateStorageV1 is RewardsDistributorDelegatorStora
   /// @notice The COMP accrued but not yet transferred to each user
   mapping(address => uint256) public compAccrued;
 
-  /// @notice The portion of COMP that each contributor receives per block
+  /// @notice The portion of COMP that each contributor receives per second
   mapping(address => uint256) public compContributorSpeeds;
 
-  /// @notice Last block at which a contributor's COMP rewards have been allocated
-  mapping(address => uint256) public lastContributorBlock;
+  /// @notice Last timestamp at which a contributor's COMP rewards have been allocated
+  mapping(address => uint256) public lastContributorTimestamp;
 }

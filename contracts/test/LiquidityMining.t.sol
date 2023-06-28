@@ -58,7 +58,7 @@ contract LiquidityMiningTest is DSTest {
   function setUpBaseContracts() public {
     underlyingToken = new MockERC20("UnderlyingToken", "UT", 18);
     rewardToken = new MockERC20("RewardToken", "RT", 18);
-    interestModel = new WhitePaperInterestRateModel(2343665, 1e18, 1e18);
+    interestModel = new WhitePaperInterestRateModel(1e18, 1e18);
     fuseAdmin = new FuseFeeDistributor();
     fuseAdmin.initialize(1e16);
     fusePoolDirectory = new FusePoolDirectory();

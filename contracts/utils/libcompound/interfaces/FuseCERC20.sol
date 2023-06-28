@@ -30,7 +30,7 @@ abstract contract FuseCERC20 is ERC20 {
 
   function exchangeRateStored() external view virtual returns (uint256);
 
-  function accrualBlockNumber() external view virtual returns (uint256);
+  function accrualTimestamp() external view virtual returns (uint256);
 
   function redeemUnderlying(uint256) external virtual returns (uint256);
 

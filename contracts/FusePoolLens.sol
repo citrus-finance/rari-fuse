@@ -214,8 +214,8 @@ contract FusePoolLens is Initializable {
     string underlyingSymbol;
     uint256 underlyingDecimals;
     uint256 underlyingBalance;
-    uint256 supplyRatePerBlock;
-    uint256 borrowRatePerBlock;
+    uint256 supplyRatePerSecond;
+    uint256 borrowRatePerSecond;
     uint256 totalSupply;
     uint256 totalBorrow;
     uint256 supplyBalance;
@@ -282,8 +282,8 @@ contract FusePoolLens is Initializable {
       }
 
       // Get cToken data
-      asset.supplyRatePerBlock = cToken.supplyRatePerBlock();
-      asset.borrowRatePerBlock = cToken.borrowRatePerBlock();
+      asset.supplyRatePerSecond = cToken.supplyRatePerSecond();
+      asset.borrowRatePerSecond = cToken.borrowRatePerSecond();
       asset.liquidity = cToken.getCash();
       asset.totalBorrow = cToken.totalBorrowsCurrent();
       asset.totalSupply =

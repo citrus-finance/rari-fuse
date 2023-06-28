@@ -27,7 +27,6 @@ export type ChainDeployConfig = {
   nativeTokenSymbol: string;
   stableToken?: string;
   wBTCToken?: string;
-  blocksPerYear: number;
 };
 
 export type Asset = {

@@ -340,19 +340,12 @@ export class FuseBase {
     switch (model) {
       case "JumpRateModel":
         if (!conf) conf = JUMP_RATE_MODEL_CONF(this.chainId).interestRateModelParams;
-        deployArgs = [
-          conf.blocksPerYear,
-          conf.baseRatePerYear,
-          conf.multiplierPerYear,
-          conf.jumpMultiplierPerYear,
-          conf.kink,
-        ];
+        deployArgs = [conf.baseRatePerYear, conf.multiplierPerYear, conf.jumpMultiplierPerYear, conf.kink];
         modelArtifact = this.artifacts.JumpRateModel;
         break;
       case "DAIInterestRateModelV2":
         if (!conf) conf = JUMP_RATE_MODEL_CONF(this.chainId).interestRateModelParams;
         deployArgs = [
-          conf.blocksPerYear,
           conf.jumpMultiplierPerYear,
           conf.kink,
           this.chainSpecificAddresses.DAI_POT,
@@ -363,11 +356,10 @@ export class FuseBase {
       case "WhitePaperInterestRateModel":
         if (!conf) conf = WHITE_PAPER_RATE_MODEL_CONF(this.chainId).interestRateModelParams;
         conf = {
-          blocksPerYear: conf.blocksPerYear,
           baseRatePerYear: conf.baseRatePerYear,
           multiplierPerYear: conf.multiplierPerYear,
         };
-        deployArgs = [conf.blocksPerYear, conf.baseRatePerYear, conf.multiplierPerYear];
+        deployArgs = [conf.baseRatePerYear, conf.multiplierPerYear];
         modelArtifact = this.artifacts.WhitePaperInterestRateModel;
         break;
       default:

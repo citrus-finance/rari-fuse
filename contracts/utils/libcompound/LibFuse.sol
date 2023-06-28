@@ -15,9 +15,9 @@ library LibFuse {
   }
 
   function viewExchangeRate(FuseCERC20 cToken) internal view returns (uint256) {
-    uint256 accrualBlockNumberPrior = cToken.accrualBlockNumber();
+    uint256 accrualTimestampPrior = cToken.accrualTimestamp();
 
-    if (accrualBlockNumberPrior == block.number) return cToken.exchangeRateStored();
+    if (accrualTimestampPrior == block.timestamp) return cToken.exchangeRateStored();
 
     uint256 totalCash = cToken.underlying().balanceOf(address(cToken));
     uint256 borrowsPrior = cToken.totalBorrows();
@@ -34,9 +34,9 @@ library LibFuse {
       );
 
       // Same as borrowRateMaxMantissa in CTokenInterfaces.sol
-      require(borrowRateMantissa <= 0.0005e16, "RATE_TOO_HIGH");
+      require(borrowRateMantissa <= 0.00005e16, "RATE_TOO_HIGH");
 
-      interestAccumulated = (borrowRateMantissa * (block.number - accrualBlockNumberPrior)).mulWadDown(borrowsPrior);
+      interestAccumulated = (borrowRateMantissa * (block.timestamp - accrualTimestampPrior)).mulWadDown(borrowsPrior);
     }
 
     uint256 totalReserves = cToken.reserveFactorMantissa().mulWadDown(interestAccumulated) + reservesPrior;

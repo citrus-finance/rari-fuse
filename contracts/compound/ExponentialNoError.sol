@@ -75,14 +75,14 @@ contract ExponentialNoError {
     return value.mantissa == 0;
   }
 
-  function safe224(uint256 n, string memory errorMessage) internal pure returns (uint224) {
-    require(n < 2 ** 224, errorMessage);
-    return uint224(n);
+  function safe216(uint256 n, string memory errorMessage) internal pure returns (uint216) {
+    require(n < 2 ** 216, errorMessage);
+    return uint216(n);
   }
 
-  function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
-    require(n < 2 ** 32, errorMessage);
-    return uint32(n);
+  function safe40(uint256 n, string memory errorMessage) internal pure returns (uint40) {
+    require(n < 2 ** 40, errorMessage);
+    return uint40(n);
   }
 
   function add_(Exp memory a, Exp memory b) internal pure returns (Exp memory) {

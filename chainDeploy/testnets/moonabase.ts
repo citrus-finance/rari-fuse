@@ -7,7 +7,6 @@ export const deployConfig: ChainDeployConfig = {
   wtoken: "0xA30404AFB4c43D25542687BCF4367F59cc77b5d2",
   nativeTokenName: "Dev (Testnet)",
   nativeTokenSymbol: "DEV",
-  blocksPerYear: 5 * 24 * 365 * 60, // 12 second blocks, 5 blocks per minute
   uniswap: {
     hardcoded: [],
     uniswapData: [],

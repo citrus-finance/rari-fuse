@@ -9,7 +9,6 @@ export const deployConfig: ChainDeployConfig = {
   nativeTokenSymbol: "ETH",
   stableToken: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   wBTCToken: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-  blocksPerYear: 4 * 24 * 365 * 60,
   uniswap: {
     uniswapV2RouterAddress: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
     uniswapV2FactoryAddress: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",

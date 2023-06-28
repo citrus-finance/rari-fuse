@@ -105,13 +105,13 @@ describe.skip("RewardsDistributorModule", function () {
       (br) => br.distributor === erc20TwoRewardsDistributor.address
     );
     expect(supplyRewardsErc20Two).to.be.ok;
-    expect(supplyRewardsErc20Two.rewardsPerBlock).to.eq(supplySpeed);
+    expect(supplyRewardsErc20Two.rewardsPerSecond).to.eq(supplySpeed);
 
     const borrowRewardsErc20Two = erc20TwoMarketRewards.borrowRewards.find(
       (br) => br.distributor === erc20TwoRewardsDistributor.address
     );
     expect(borrowRewardsErc20Two).to.be.ok;
-    expect(supplyRewardsErc20Two.rewardsPerBlock).to.eq(borrowSpeed);
+    expect(supplyRewardsErc20Two.rewardsPerSecond).to.eq(borrowSpeed);
 
     // Check if ClaimableRewards are correctly returned => no rewards yet
     const claimableRewardsBefore = await sdk.getRewardsDistributorClaimableRewards(alice.address, {

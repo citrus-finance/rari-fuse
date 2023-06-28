@@ -1,4 +1,4 @@
-import { chainSpecificParams, SupportedChains } from "../network";
+import { SupportedChains } from "../network";
 
 export const SIMPLE_DEPLOY_ORACLES: Array<string> = [
   "UniswapLpTokenPriceOracle",
@@ -85,7 +85,6 @@ export const JUMP_RATE_MODEL_CONF = (chainId: SupportedChains) => {
   return {
     interestRateModel: "JumpRateModel",
     interestRateModelParams: {
-      blocksPerYear: chainSpecificParams[chainId].blocksPerYear,
       baseRatePerYear: "20000000000000000",
       multiplierPerYear: "200000000000000000",
       jumpMultiplierPerYear: "2000000000000000000",
@@ -98,7 +97,6 @@ export const WHITE_PAPER_RATE_MODEL_CONF = (chainId: SupportedChains) => {
   return {
     interestRateModel: "WhitePaperRateModel",
     interestRateModelParams: {
-      blocksPerYear: chainSpecificParams[chainId].blocksPerYear,
       baseRatePerYear: "20000000000000000",
       multiplierPerYear: "200000000000000000",
     },

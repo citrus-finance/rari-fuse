@@ -12,31 +12,26 @@ contract JumpRateModel is InterestRateModel {
   using SafeMath for uint256;
 
   event NewInterestParams(
-    uint256 baseRatePerBlock,
-    uint256 multiplierPerBlock,
-    uint256 jumpMultiplierPerBlock,
+    uint256 baseRatePerSecond,
+    uint256 multiplierPerSecond,
+    uint256 jumpMultiplierPerSecond,
     uint256 kink
   );
 
   /**
-   * @notice The approximate number of blocks per year that is assumed by the interest rate model
-   */
-  uint256 public blocksPerYear;
-
-  /**
    * @notice The multiplier of utilization rate that gives the slope of the interest rate
    */
-  uint256 public multiplierPerBlock;
+  uint256 public multiplierPerSecond;
 
   /**
    * @notice The base interest rate which is the y-intercept when utilization rate is 0
    */
-  uint256 public baseRatePerBlock;
+  uint256 public baseRatePerSecond;
 
   /**
-   * @notice The multiplierPerBlock after hitting a specified utilization point
+   * @notice The multiplierPerSecond after hitting a specified utilization point
    */
-  uint256 public jumpMultiplierPerBlock;
+  uint256 public jumpMultiplierPerSecond;
 
   /**
    * @notice The utilization point at which the jump multiplier is applied
@@ -45,26 +40,18 @@ contract JumpRateModel is InterestRateModel {
 
   /**
    * @notice Construct an interest rate model
-   * @param _blocksPerYear The approximate number of blocks per year
    * @param baseRatePerYear The approximate target base APR, as a mantissa (scaled by 1e18)
    * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by 1e18)
-   * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
+   * @param jumpMultiplierPerYear The multiplierPerSecond after hitting a specified utilization point
    * @param kink_ The utilization point at which the jump multiplier is applied
    */
-  constructor(
-    uint256 _blocksPerYear,
-    uint256 baseRatePerYear,
-    uint256 multiplierPerYear,
-    uint256 jumpMultiplierPerYear,
-    uint256 kink_
-  ) {
-    blocksPerYear = _blocksPerYear;
-    baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
-    multiplierPerBlock = multiplierPerYear.div(blocksPerYear);
-    jumpMultiplierPerBlock = jumpMultiplierPerYear.div(blocksPerYear);
+  constructor(uint256 baseRatePerYear, uint256 multiplierPerYear, uint256 jumpMultiplierPerYear, uint256 kink_) {
+    baseRatePerSecond = baseRatePerYear.div(365 days);
+    multiplierPerSecond = multiplierPerYear.div(365 days);
+    jumpMultiplierPerSecond = jumpMultiplierPerYear.div(365 days);
     kink = kink_;
 
-    emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink);
+    emit NewInterestParams(baseRatePerSecond, multiplierPerSecond, jumpMultiplierPerSecond, kink);
   }
 
   /**
@@ -84,31 +71,31 @@ contract JumpRateModel is InterestRateModel {
   }
 
   /**
-   * @notice Calculates the current borrow rate per block, with the error code expected by the market
+   * @notice Calculates the current borrow rate per second, with the error code expected by the market
    * @param cash The amount of cash in the market
    * @param borrows The amount of borrows in the market
    * @param reserves The amount of reserves in the market
-   * @return The borrow rate percentage per block as a mantissa (scaled by 1e18)
+   * @return The borrow rate percentage per second as a mantissa (scaled by 1e18)
    */
   function getBorrowRate(uint256 cash, uint256 borrows, uint256 reserves) public view override returns (uint256) {
     uint256 util = utilizationRate(cash, borrows, reserves);
 
     if (util <= kink) {
-      return util.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
+      return util.mul(multiplierPerSecond).div(1e18).add(baseRatePerSecond);
     } else {
-      uint256 normalRate = kink.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
+      uint256 normalRate = kink.mul(multiplierPerSecond).div(1e18).add(baseRatePerSecond);
       uint256 excessUtil = util.sub(kink);
-      return excessUtil.mul(jumpMultiplierPerBlock).div(1e18).add(normalRate);
+      return excessUtil.mul(jumpMultiplierPerSecond).div(1e18).add(normalRate);
     }
   }
 
   /**
-   * @notice Calculates the current supply rate per block
+   * @notice Calculates the current supply rate per second
    * @param cash The amount of cash in the market
    * @param borrows The amount of borrows in the market
    * @param reserves The amount of reserves in the market
    * @param reserveFactorMantissa The current reserve factor for the market
-   * @return The supply rate percentage per block as a mantissa (scaled by 1e18)
+   * @return The supply rate percentage per second as a mantissa (scaled by 1e18)
    */
   function getSupplyRate(
     uint256 cash,

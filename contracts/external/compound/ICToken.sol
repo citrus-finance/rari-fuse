@@ -37,9 +37,9 @@ interface ICToken {
 
   function balanceOfUnderlying(address owner) external returns (uint256);
 
-  function borrowRatePerBlock() external view returns (uint256);
+  function borrowRatePerSecond() external view returns (uint256);
 
-  function supplyRatePerBlock() external view returns (uint256);
+  function supplyRatePerSecond() external view returns (uint256);
 
   function totalBorrowsCurrent() external returns (uint256);
 

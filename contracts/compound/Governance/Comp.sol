@@ -23,9 +23,9 @@ contract Comp {
   /// @notice A record of each accounts delegate
   mapping(address => address) public delegates;
 
-  /// @notice A checkpoint for marking number of votes from a given block
+  /// @notice A checkpoint for marking number of votes from a given timestamp
   struct Checkpoint {
-    uint32 fromBlock;
+    uint40 fromTimestamp;
     uint96 votes;
   }
 
@@ -187,14 +187,14 @@ contract Comp {
   }
 
   /**
-   * @notice Determine the prior number of votes for an account as of a block number
-   * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+   * @notice Determine the prior number of votes for an account as of a timestamp
+   * @dev Timestamp must be of a finalized block or else this function will revert to prevent misinformation.
    * @param account The address of the account to check
-   * @param blockNumber The block number to get the vote balance at
+   * @param timestamp The timestamp to get the vote balance at
    * @return The number of votes the account had as of the given block
    */
-  function getPriorVotes(address account, uint256 blockNumber) public view returns (uint96) {
-    require(blockNumber < block.number, "Comp::getPriorVotes: not yet determined");
+  function getPriorVotes(address account, uint256 timestamp) public view returns (uint96) {
+    require(timestamp < block.timestamp, "Comp::getPriorVotes: not yet determined");
 
     uint32 nCheckpoints = numCheckpoints[account];
     if (nCheckpoints == 0) {
@@ -202,12 +202,12 @@ contract Comp {
     }
 
     // First check most recent balance
-    if (checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
+    if (checkpoints[account][nCheckpoints - 1].fromTimestamp <= timestamp) {
       return checkpoints[account][nCheckpoints - 1].votes;
     }
 
     // Next check implicit zero balance
-    if (checkpoints[account][0].fromBlock > blockNumber) {
+    if (checkpoints[account][0].fromTimestamp > timestamp) {
       return 0;
     }
 
@@ -216,9 +216,9 @@ contract Comp {
     while (upper > lower) {
       uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
       Checkpoint memory cp = checkpoints[account][center];
-      if (cp.fromBlock == blockNumber) {
+      if (cp.fromTimestamp == timestamp) {
         return cp.votes;
-      } else if (cp.fromBlock < blockNumber) {
+      } else if (cp.fromTimestamp < timestamp) {
         lower = center;
       } else {
         upper = center - 1;
@@ -267,21 +267,21 @@ contract Comp {
   }
 
   function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint96 oldVotes, uint96 newVotes) internal {
-    uint32 blockNumber = safe32(block.number, "Comp::_writeCheckpoint: block number exceeds 32 bits");
+    uint40 timestamp = safe40(block.timestamp, "Comp::_writeCheckpoint: timestamp exceeds 40 bits");
 
-    if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
+    if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromTimestamp == timestamp) {
       checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
     } else {
-      checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
+      checkpoints[delegatee][nCheckpoints] = Checkpoint(timestamp, newVotes);
       numCheckpoints[delegatee] = nCheckpoints + 1;
     }
 
     emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
   }
 
-  function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {
-    require(n < 2 ** 32, errorMessage);
-    return uint32(n);
+  function safe40(uint256 n, string memory errorMessage) internal pure returns (uint40) {
+    require(n < 2 ** 40, errorMessage);
+    return uint40(n);
   }
 
   function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {

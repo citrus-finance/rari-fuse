@@ -4,7 +4,6 @@ export const deployConfig: ChainDeployConfig = {
   wtoken: "",
   nativeTokenName: "EMVOS",
   nativeTokenSymbol: "PHO",
-  blocksPerYear: 8.6 * 24 * 365 * 60,
   stableToken: "",
   wBTCToken: "",
   uniswap: {

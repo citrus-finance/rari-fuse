@@ -40,9 +40,9 @@ export interface InterestRateModel {
   ): Promise<void>;
 
   __init(
-    baseRatePerBlock: BigNumberish,
-    multiplierPerBlock: BigNumberish,
-    jumpMultiplierPerBlock: BigNumberish,
+    baseRatePerSecond: BigNumberish,
+    multiplierPerSecond: BigNumberish,
+    jumpMultiplierPerSecond: BigNumberish,
     kink: BigNumberish,
     reserveFactorMantissa: BigNumberish,
     adminFeeMantissa: BigNumberish,
@@ -122,7 +122,6 @@ export type OracleConf = {
 };
 
 export type InterestRateModelParams = {
-  blocksPerYear?: BigNumber;
   baseRatePerYear?: string;
   multiplierPerYear?: string;
   jumpMultiplierPerYear?: string;
@@ -156,8 +155,8 @@ export interface FuseAsset {
   adminFee: BigNumber;
   fuseFee: BigNumber;
 
-  borrowRatePerBlock: BigNumber;
-  supplyRatePerBlock: BigNumber;
+  borrowRatePerSecond: BigNumber;
+  supplyRatePerSecond: BigNumber;
 
   totalBorrow: BigNumber;
   totalSupply: BigNumber;

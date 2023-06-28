@@ -14,7 +14,7 @@ export interface ClaimableReward {
 export interface RewardsDistributorReward {
   distributor: string;
   rewardToken: string;
-  rewardsPerBlock: BigNumber;
+  rewardsPerSecond: BigNumber;
 }
 export interface RewardsDistributorMarketReward {
   cToken: string;
@@ -81,38 +81,38 @@ export function withRewardsDistributor<TBase extends FuseBaseConstructor>(Base: 
     updateRewardsDistributorSupplySpeed(
       rewardsDistributorAddress: string,
       cTokenAddress: string,
-      rewardsPerBlock: BigNumberish,
+      rewardsPerSecond: BigNumberish,
       options: { from: string }
     ) {
       const rewardsDistributorInstance = this.#getRewardsDistributorInstance(rewardsDistributorAddress, options);
 
-      return rewardsDistributorInstance._setCompSupplySpeed(cTokenAddress, rewardsPerBlock);
+      return rewardsDistributorInstance._setCompSupplySpeed(cTokenAddress, rewardsPerSecond);
     }
 
     updateRewardsDistributorBorrowSpeed(
       rewardsDistributorAddress: string,
       cTokenAddress: string,
-      rewardsPerBlock: BigNumberish,
+      rewardsPerSecond: BigNumberish,
       options: { from: string }
     ) {
       const rewardsDistributorInstance = this.#getRewardsDistributorInstance(rewardsDistributorAddress, options);
 
-      return rewardsDistributorInstance._setCompBorrowSpeed(cTokenAddress, rewardsPerBlock);
+      return rewardsDistributorInstance._setCompBorrowSpeed(cTokenAddress, rewardsPerSecond);
     }
 
     updateRewardsDistributorSpeeds(
       rewardsDistributorAddress: string,
       cTokenAddress: string[],
-      rewardsPerBlockSuppliers: BigNumberish[],
-      rewardsPerBlockBorrowers: BigNumberish[],
+      rewardsPerSecondSuppliers: BigNumberish[],
+      rewardsPerSecondBorrowers: BigNumberish[],
       options: { from: string }
     ) {
       const rewardsDistributorInstance = this.#getRewardsDistributorInstance(rewardsDistributorAddress, options);
 
       return rewardsDistributorInstance._setCompSpeeds(
         cTokenAddress,
-        rewardsPerBlockSuppliers,
-        rewardsPerBlockBorrowers
+        rewardsPerSecondSuppliers,
+        rewardsPerSecondBorrowers
       );
     }
 
@@ -236,14 +236,14 @@ export function withRewardsDistributor<TBase extends FuseBaseConstructor>(Base: 
           .map((speed, speedIndex) => ({
             distributor: distributors[speedIndex],
             rewardToken: rewardTokens[speedIndex],
-            rewardsPerBlock: speed,
+            rewardsPerSecond: speed,
           })),
         borrowRewards: borrowSpeeds[marketIndex]
           .filter((speed) => speed.gt(0))
           .map((speed, speedIndex) => ({
             distributor: distributors[speedIndex],
             rewardToken: rewardTokens[speedIndex],
-            rewardsPerBlock: speed,
+            rewardsPerSecond: speed,
           })),
       }));
 
