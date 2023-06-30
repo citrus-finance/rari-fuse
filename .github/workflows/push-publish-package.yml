@@ -43,6 +43,7 @@ jobs:
         # run: npm run test:forge
 
   release:
+    if: false
     needs:
       - build-and-test-local
       # - build-and-test-local-forge
