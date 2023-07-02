@@ -77,10 +77,6 @@ import { getOrCreateFuse } from "../utils/fuseSdk";
     } = await setUpLiquidation({ poolName }));
   });
 
-  afterEach(async () => {
-    await resetPriceOracle(erc20One, erc20Two);
-  });
-
   it("FL - should liquidate a native borrow for token collateral", async function () {
     const { alice, bob } = await ethers.getNamedSigners();
 

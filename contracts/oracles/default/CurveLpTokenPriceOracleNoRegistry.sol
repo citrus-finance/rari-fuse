@@ -42,8 +42,8 @@ contract CurveLpTokenPriceOracleNoRegistry is IPriceOracle, BasePriceOracle, Own
     address[][] memory _poolUnderlyings
   ) public initializer {
     require(
-      _lpTokens.length > 0 && _lpTokens.length == _pools.length && _lpTokens.length == _poolUnderlyings.length,
-      "No LP tokens supplied or array lengths not equal."
+      _lpTokens.length == _pools.length && _lpTokens.length == _poolUnderlyings.length,
+      "LP tokens supplied array lengths not equal."
     );
 
     __Ownable_init();

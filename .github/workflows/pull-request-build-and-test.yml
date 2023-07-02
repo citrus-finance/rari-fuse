@@ -46,7 +46,6 @@ jobs:
         run: npm run test:forge
 
   build-and-test-bsc:
-    if: false
     env:
       MNEMONIC: "${{ secrets.MNEMONIC }}"
       FORK_URL_BSC: "${{ secrets.FORK_URL_BSC }}"
