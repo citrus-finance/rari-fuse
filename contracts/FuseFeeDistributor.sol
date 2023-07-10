@@ -19,6 +19,70 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
   using AddressUpgradeable for address;
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
+  struct CDelegateUpgradeData {
+    address implementation;
+    bool allowResign;
+    bytes becomeImplementationData;
+  }
+
+  /**
+   * @notice The proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).
+   */
+  uint256 public defaultInterestFeeRate;
+
+  /**
+   * @dev Minimum borrow balance (in ETH) per user per Fuse pool asset (only checked on new borrows, not redemptions).
+   */
+  uint256 public minBorrowEth;
+
+  /**
+   * @dev Maximum supply balance (in ETH) per user per Fuse pool asset.
+   * No longer used as of `Rari-Capital/compound-protocol` version `fuse-v1.1.0`.
+   */
+  uint256 public maxSupplyEth;
+
+  /**
+   * @dev Maximum utilization rate (scaled by 1e18) for Fuse pool assets (only checked on new borrows, not redemptions).
+   * No longer used as of `Rari-Capital/compound-protocol` version `fuse-v1.1.0`.
+   */
+  uint256 public maxUtilizationRate;
+
+  /**
+   * @dev Whitelisted Comptroller implementation contract addresses for each existing implementation.
+   */
+  mapping(address => mapping(address => bool)) public comptrollerImplementationWhitelist;
+
+  /**
+   * @dev Whitelisted CErc20Delegate implementation contract addresses and `allowResign` values for each existing implementation.
+   */
+  mapping(address => mapping(address => mapping(bool => bool))) public cErc20DelegateWhitelist;
+
+  /**
+   * @dev Whitelisted CEtherDelegate implementation contract addresses and `allowResign` values for each existing implementation.
+   */
+  mapping(address => mapping(address => mapping(bool => bool))) public cEtherDelegateWhitelist;
+
+  /**
+   * @dev Latest Comptroller implementation for each existing implementation.
+   */
+  mapping(address => address) internal _latestComptrollerImplementation;
+
+  /**
+   * @dev Latest CErc20Delegate implementation for each existing implementation.
+   */
+  mapping(address => CDelegateUpgradeData) public _latestCErc20Delegate;
+
+  /**
+   * @dev Latest CEtherDelegate implementation for each existing implementation.
+   */
+  mapping(address => CDelegateUpgradeData) public _latestCEtherDelegate;
+
+  /**
+   * @notice Maps Unitroller (Comptroller proxy) addresses to the proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).
+   * @dev A value of 0 means unset whereas a negative value means 0.
+   */
+  mapping(address => int256) public customInterestFeeRates;
+
   /**
    * @dev Initializer that sets initial values of state variables.
    * @param _defaultInterestFeeRate The default proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).
@@ -30,11 +94,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
     maxSupplyEth = type(uint256).max;
     maxUtilizationRate = type(uint256).max;
   }
-
-  /**
-   * @notice The proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).
-   */
-  uint256 public defaultInterestFeeRate;
 
   /**
    * @dev Sets the default proportion of Fuse pool interest taken as a protocol fee.
@@ -62,23 +121,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
       token.safeTransfer(owner(), balance);
     }
   }
-
-  /**
-   * @dev Minimum borrow balance (in ETH) per user per Fuse pool asset (only checked on new borrows, not redemptions).
-   */
-  uint256 public minBorrowEth;
-
-  /**
-   * @dev Maximum supply balance (in ETH) per user per Fuse pool asset.
-   * No longer used as of `Rari-Capital/compound-protocol` version `fuse-v1.1.0`.
-   */
-  uint256 public maxSupplyEth;
-
-  /**
-   * @dev Maximum utilization rate (scaled by 1e18) for Fuse pool assets (only checked on new borrows, not redemptions).
-   * No longer used as of `Rari-Capital/compound-protocol` version `fuse-v1.1.0`.
-   */
-  uint256 public maxUtilizationRate;
 
   /**
    * @dev Sets the proportion of Fuse pool interest taken as a protocol fee.
@@ -156,11 +198,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
   }
 
   /**
-   * @dev Whitelisted Comptroller implementation contract addresses for each existing implementation.
-   */
-  mapping(address => mapping(address => bool)) public comptrollerImplementationWhitelist;
-
-  /**
    * @dev Adds/removes Comptroller implementations to the whitelist.
    * @param oldImplementations The old `Comptroller` implementation addresses to upgrade from for each `newImplementations` to upgrade to.
    * @param newImplementations Array of `Comptroller` implementations to be whitelisted/unwhitelisted.
@@ -180,11 +217,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
     for (uint256 i = 0; i < newImplementations.length; i++)
       comptrollerImplementationWhitelist[oldImplementations[i]][newImplementations[i]] = statuses[i];
   }
-
-  /**
-   * @dev Whitelisted CErc20Delegate implementation contract addresses and `allowResign` values for each existing implementation.
-   */
-  mapping(address => mapping(address => mapping(bool => bool))) public cErc20DelegateWhitelist;
 
   /**
    * @dev Adds/removes CErc20Delegate implementations to the whitelist.
@@ -209,11 +241,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
     for (uint256 i = 0; i < newImplementations.length; i++)
       cErc20DelegateWhitelist[oldImplementations[i]][newImplementations[i]][allowResign[i]] = statuses[i];
   }
-
-  /**
-   * @dev Whitelisted CEtherDelegate implementation contract addresses and `allowResign` values for each existing implementation.
-   */
-  mapping(address => mapping(address => mapping(bool => bool))) public cEtherDelegateWhitelist;
 
   /**
    * @dev Adds/removes CEtherDelegate implementations to the whitelist.
@@ -242,11 +269,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
   /**
    * @dev Latest Comptroller implementation for each existing implementation.
    */
-  mapping(address => address) internal _latestComptrollerImplementation;
-
-  /**
-   * @dev Latest Comptroller implementation for each existing implementation.
-   */
   function latestComptrollerImplementation(address oldImplementation) external view returns (address) {
     return
       _latestComptrollerImplementation[oldImplementation] != address(0)
@@ -265,22 +287,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
   ) external onlyOwner {
     _latestComptrollerImplementation[oldImplementation] = newImplementation;
   }
-
-  struct CDelegateUpgradeData {
-    address implementation;
-    bool allowResign;
-    bytes becomeImplementationData;
-  }
-
-  /**
-   * @dev Latest CErc20Delegate implementation for each existing implementation.
-   */
-  mapping(address => CDelegateUpgradeData) public _latestCErc20Delegate;
-
-  /**
-   * @dev Latest CEtherDelegate implementation for each existing implementation.
-   */
-  mapping(address => CDelegateUpgradeData) public _latestCEtherDelegate;
 
   /**
    * @dev Latest CErc20Delegate implementation for each existing implementation.
@@ -345,12 +351,6 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
       becomeImplementationData
     );
   }
-
-  /**
-   * @notice Maps Unitroller (Comptroller proxy) addresses to the proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).
-   * @dev A value of 0 means unset whereas a negative value means 0.
-   */
-  mapping(address => int256) public customInterestFeeRates;
 
   /**
    * @notice Returns the proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).

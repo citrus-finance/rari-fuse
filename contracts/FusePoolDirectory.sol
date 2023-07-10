@@ -17,15 +17,14 @@ import "./compound/Unitroller.sol";
  */
 contract FusePoolDirectory is OwnableUpgradeable {
   /**
-   * @dev Initializes a deployer whitelist if desired.
-   * @param _enforceDeployerWhitelist Boolean indicating if the deployer whitelist is to be enforced.
-   * @param _deployerWhitelist Array of Ethereum accounts to be whitelisted.
+   * @dev Emitted when a new Fuse pool is added to the directory.
    */
-  function initialize(bool _enforceDeployerWhitelist, address[] memory _deployerWhitelist) public initializer {
-    __Ownable_init();
-    enforceDeployerWhitelist = _enforceDeployerWhitelist;
-    for (uint256 i = 0; i < _deployerWhitelist.length; i++) deployerWhitelist[_deployerWhitelist[i]] = true;
-  }
+  event PoolRegistered(uint256 index, FusePool pool);
+
+  /**
+   * @dev Event emitted when the admin whitelist is updated.
+   */
+  event AdminWhitelistUpdated(address[] admins, bool status);
 
   /**
    * @dev Struct for a Fuse interest rate pool.
@@ -54,11 +53,6 @@ contract FusePoolDirectory is OwnableUpgradeable {
   mapping(address => bool) public poolExists;
 
   /**
-   * @dev Emitted when a new Fuse pool is added to the directory.
-   */
-  event PoolRegistered(uint256 index, FusePool pool);
-
-  /**
    * @dev Booleans indicating if the deployer whitelist is enforced.
    */
   bool public enforceDeployerWhitelist;
@@ -67,6 +61,29 @@ contract FusePoolDirectory is OwnableUpgradeable {
    * @dev Maps Ethereum accounts to booleans indicating if they are allowed to deploy pools.
    */
   mapping(address => bool) public deployerWhitelist;
+
+  /**
+   * @dev Maps Ethereum accounts to arrays of Fuse pool Comptroller proxy contract addresses.
+   */
+  mapping(address => address[]) private _bookmarks;
+
+  /**
+   * @dev Maps Ethereum accounts to booleans indicating if they are a whitelisted admin.
+   */
+  mapping(address => bool) public adminWhitelist;
+
+  address public fuseAdmin;
+
+  /**
+   * @dev Initializes a deployer whitelist if desired.
+   * @param _enforceDeployerWhitelist Boolean indicating if the deployer whitelist is to be enforced.
+   * @param _deployerWhitelist Array of Ethereum accounts to be whitelisted.
+   */
+  function initialize(bool _enforceDeployerWhitelist, address[] memory _deployerWhitelist) public initializer {
+    __Ownable_init();
+    enforceDeployerWhitelist = _enforceDeployerWhitelist;
+    for (uint256 i = 0; i < _deployerWhitelist.length; i++) deployerWhitelist[_deployerWhitelist[i]] = true;
+  }
 
   /**
    * @dev Controls if the deployer whitelist is to be enforced.
@@ -230,11 +247,6 @@ contract FusePoolDirectory is OwnableUpgradeable {
   }
 
   /**
-   * @dev Maps Ethereum accounts to arrays of Fuse pool Comptroller proxy contract addresses.
-   */
-  mapping(address => address[]) private _bookmarks;
-
-  /**
    * @notice Returns arrays of Fuse pool Unitroller (Comptroller proxy) contract addresses bookmarked by `account`.
    */
   function getBookmarks(address account) external view returns (address[] memory) {
@@ -256,16 +268,6 @@ contract FusePoolDirectory is OwnableUpgradeable {
     require((msg.sender == _comptroller.admin() && _comptroller.adminHasRights()) || msg.sender == owner());
     pools[index].name = name;
   }
-
-  /**
-   * @dev Maps Ethereum accounts to booleans indicating if they are a whitelisted admin.
-   */
-  mapping(address => bool) public adminWhitelist;
-
-  /**
-   * @dev Event emitted when the admin whitelist is updated.
-   */
-  event AdminWhitelistUpdated(address[] admins, bool status);
 
   /**
    * @dev Adds/removes Ethereum accounts to the admin whitelist.
