@@ -8,6 +8,12 @@ The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publ
 
 - Changed `block.number` to `block.timestamp` for rewards distribution and interest rates so it's can run on blockchains with different or variable blocktime
   - The miner can now trigger a liquidation on their own term because they have a bit of control over the timestamp. It shouldn't matter as miners already had control over the liquidation when they prioritise their own liquidation transaction. As long as liquidation are happening, this change should not be an issue.
+- Added owner, Comptroller default implementation and CErc20 default implementations to FuseFeeDistributor#initialize so anyone can deploy it
+  - having harcoded implementations with a bug in them could cause issue when the code is being deployed to a new network
+- Added owner and fuseAdmin (should be FuseFeeDistributor) to FusePoolDirectory#initialize so anyone can deploy it 
+- Removed the Comptroller constructor
+  - It was not being used, as the Comptroller is an implementation it should not store data
+
 
 ## Structure
 

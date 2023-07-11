@@ -85,14 +85,25 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
 
   /**
    * @dev Initializer that sets initial values of state variables.
+   * @param owner Default owner.
    * @param _defaultInterestFeeRate The default proportion of Fuse pool interest taken as a protocol fee (scaled by 1e18).
+   * @param initialComptrollerImplementation The initial comptroller implementation
+   * @param initialCErc20Delegate The initial CErc20Delegate implementation
    */
-  function initialize(uint256 _defaultInterestFeeRate) public initializer {
+  function initialize(
+    address owner,
+    uint256 _defaultInterestFeeRate,
+    address initialComptrollerImplementation,
+    address initialCErc20Delegate
+  ) public initializer {
     require(_defaultInterestFeeRate <= 1e18, "Interest fee rate cannot be more than 100%.");
     __Ownable_init();
+    transferOwnership(owner);
     defaultInterestFeeRate = _defaultInterestFeeRate;
     maxSupplyEth = type(uint256).max;
     maxUtilizationRate = type(uint256).max;
+    comptrollerImplementationWhitelist[address(0)][initialComptrollerImplementation] = true;
+    cErc20DelegateWhitelist[address(0)][initialCErc20Delegate][false] = true;
   }
 
   /**
@@ -169,8 +180,9 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
    */
   function deployCEther(bytes calldata constructorData) external returns (address) {
     // Make sure comptroller == msg.sender
-    address comptroller = abi.decode(constructorData[0:32], (address));
+    (address comptroller, address fuseAdmin) = abi.decode(constructorData[0:64], (address, address));
     require(comptroller == msg.sender, "Comptroller is not sender.");
+    require(fuseAdmin == address(this), "FuseAdmin is not this contract.");
     // Deploy CEtherDelegator using msg.sender, underlying, and block.number as a salt
     bytes32 salt = keccak256(abi.encodePacked(msg.sender, address(0), block.number));
 
@@ -185,8 +197,12 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
    */
   function deployCErc20(bytes calldata constructorData) external returns (address) {
     // Make sure comptroller == msg.sender
-    (address underlying, address comptroller) = abi.decode(constructorData[0:64], (address, address));
+    (address underlying, address comptroller, address fuseAdmin) = abi.decode(
+      constructorData[0:96],
+      (address, address, address)
+    );
     require(comptroller == msg.sender, "Comptroller is not sender.");
+    require(fuseAdmin == address(this), "FuseAdmin is not this contract.");
 
     // Deploy CErc20Delegator using msg.sender, underlying, and block.number as a salt
     bytes32 salt = keccak256(abi.encodePacked(msg.sender, underlying, block.number));

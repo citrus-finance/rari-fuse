@@ -84,10 +84,6 @@ contract Comptroller is ComptrollerV3Storage, ComptrollerInterface, ComptrollerE
   // liquidationIncentiveMantissa must be no greater than this value
   uint256 internal constant liquidationIncentiveMaxMantissa = 1.5e18; // 1.5
 
-  constructor(address payable _fuseAdmin) {
-    fuseAdmin = _fuseAdmin;
-  }
-
   /*** Assets You Are In ***/
 
   /**

@@ -76,11 +76,20 @@ contract FusePoolDirectory is OwnableUpgradeable {
 
   /**
    * @dev Initializes a deployer whitelist if desired.
+   * @param owner Default owner.
+   * @param _fuseAdmin Fuse admin.
    * @param _enforceDeployerWhitelist Boolean indicating if the deployer whitelist is to be enforced.
    * @param _deployerWhitelist Array of Ethereum accounts to be whitelisted.
    */
-  function initialize(bool _enforceDeployerWhitelist, address[] memory _deployerWhitelist) public initializer {
+  function initialize(
+    address owner,
+    address _fuseAdmin,
+    bool _enforceDeployerWhitelist,
+    address[] memory _deployerWhitelist
+  ) public initializer {
     __Ownable_init();
+    transferOwnership(owner);
+    fuseAdmin = _fuseAdmin;
     enforceDeployerWhitelist = _enforceDeployerWhitelist;
     for (uint256 i = 0; i < _deployerWhitelist.length; i++) deployerWhitelist[_deployerWhitelist[i]] = true;
   }
@@ -141,15 +150,14 @@ contract FusePoolDirectory is OwnableUpgradeable {
     uint256 liquidationIncentive,
     address priceOracle
   ) external returns (uint256, address) {
-    // Input validation
-    require(implementation != address(0), "No Comptroller implementation contract address specified.");
-    require(priceOracle != address(0), "No PriceOracle contract address specified.");
+    {
+      address _fuseAdmin = abi.decode(constructorData[0:32], (address));
 
-    // Deploy CEtherDelegator using msg.sender, underlying, and block.number as a salt
-    //        bytes32 salt = keccak256(abi.encodePacked(msg.sender, address(0), block.number));
-    //
-
-    //        address proxy = Create2Upgradeable.deploy(0, salt, cEtherDelegatorCreationCode);
+      // Input validation
+      require(_fuseAdmin == fuseAdmin, "FuseAdmin is incorrect.");
+      require(implementation != address(0), "No Comptroller implementation contract address specified.");
+      require(priceOracle != address(0), "No PriceOracle contract address specified.");
+    }
 
     // Deploy Unitroller using msg.sender, name, and block.number as a salt
     bytes memory unitrollerCreationCode = abi.encodePacked(type(Unitroller).creationCode, constructorData);

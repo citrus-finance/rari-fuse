@@ -59,17 +59,17 @@ contract LiquidityMiningTest is DSTest {
     underlyingToken = new MockERC20("UnderlyingToken", "UT", 18);
     rewardToken = new MockERC20("RewardToken", "RT", 18);
     interestModel = new WhitePaperInterestRateModel(1e18, 1e18);
-    fuseAdmin = new FuseFeeDistributor();
-    fuseAdmin.initialize(1e16);
-    fusePoolDirectory = new FusePoolDirectory();
-    fusePoolDirectory.initialize(false, emptyAddresses);
     cErc20Delegate = new CErc20Delegate();
+    fuseAdmin = new FuseFeeDistributor();
+    fuseAdmin.initialize(address(this), 1e16, address(0), address(cErc20Delegate));
+    fusePoolDirectory = new FusePoolDirectory();
+    fusePoolDirectory.initialize(address(this), address(fuseAdmin), false, emptyAddresses);
   }
 
   function setUpPoolAndMarket() public {
     MockPriceOracle priceOracle = new MockPriceOracle(10);
     emptyAddresses.push(address(0));
-    Comptroller tempComptroller = new Comptroller(payable(fuseAdmin));
+    Comptroller tempComptroller = new Comptroller();
     newUnitroller.push(address(tempComptroller));
     trueBoolArray.push(true);
     falseBoolArray.push(false);
