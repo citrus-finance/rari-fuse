@@ -315,6 +315,11 @@ contract CErc20Storage {
    * @notice Underlying asset for this CToken
    */
   address public underlying;
+
+  /*
+   * Vault where unused funds will be deposited
+   */
+  address public vault;
 }
 
 abstract contract CErc20Interface is CErc20Storage {
@@ -337,6 +342,11 @@ abstract contract CErc20Interface is CErc20Storage {
     uint256 repayAmount,
     CTokenInterface cTokenCollateral
   ) external virtual returns (uint256);
+
+  /**
+   * @notice Event to be emitted when a new vault is set
+   */
+  event NewVault(address indexed oldVault, address indexed newVault);
 }
 
 contract CEtherInterface is CErc20Storage {}

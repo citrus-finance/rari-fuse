@@ -13,6 +13,7 @@ The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publ
 - Added owner and fuseAdmin (should be FuseFeeDistributor) to FusePoolDirectory#initialize so anyone can deploy it 
 - Removed the Comptroller constructor
   - It was not being used, as the Comptroller is an implementation it should not store data
+- Add vault on CErc20.sol to deposit extra cash so it can earn yield
 
 
 ## Structure

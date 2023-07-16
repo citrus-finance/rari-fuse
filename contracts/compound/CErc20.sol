@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
+import "openzeppelin-contracts/contracts/utils/Address.sol";
+
+import "./IERC4626.sol";
 import "./CToken.sol";
 
 interface CompLike {
   function delegate(address delegatee) external;
+}
+
+interface PauseGuardianComptroller {
+  function pauseGuardian() external pure returns (address);
 }
 
 /**
@@ -133,6 +140,41 @@ contract CErc20 is CToken, CErc20Interface {
     return err;
   }
 
+  /**
+   * @notice Admin call to set vault for market
+   * @param newVault The address of the new vault
+   */
+  function setVault(address newVault) external {
+    bool hasRights = hasAdminRights();
+
+    require(
+      hasRights || msg.sender == PauseGuardianComptroller(address(comptroller)).pauseGuardian(),
+      "only guardian or admin can change the vault"
+    );
+    require(hasRights || newVault == address(0), "only admin can set vault");
+    require(newVault == address(0) || Address.isContract(newVault), "vault must be a contract");
+
+    if (vault != address(0)) {
+      IERC4626 _vault = IERC4626(vault);
+      uint shares = _vault.balanceOf(address(this));
+      if (shares != 0) {
+        _vault.redeem(shares, address(this), address(this));
+      }
+    }
+
+    if (newVault != address(0)) {
+      EIP20Interface token = EIP20Interface(underlying);
+      uint tokenBalance = token.balanceOf(address(this));
+      token.approve(newVault, type(uint256).max);
+      if (tokenBalance > 0) {
+        IERC4626(newVault).deposit(tokenBalance, address(this));
+      }
+    }
+
+    emit NewVault(vault, newVault);
+    vault = newVault;
+  }
+
   /*** Safe Token ***/
 
   /**
@@ -141,6 +183,11 @@ contract CErc20 is CToken, CErc20Interface {
    * @return The quantity of underlying tokens owned by this contract
    */
   function getCashPrior() internal view virtual override returns (uint256) {
+    if (vault != address(0)) {
+      IERC4626 _vault = IERC4626(vault);
+      return _vault.convertToAssets(_vault.balanceOf(address(this)));
+    }
+
     EIP20Interface token = EIP20Interface(underlying);
     return token.balanceOf(address(this));
   }
@@ -164,6 +211,12 @@ contract CErc20 is CToken, CErc20Interface {
     // Calculate the amount that was *actually* transferred
     uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
     require(balanceAfter >= balanceBefore, "TOKEN_TRANSFER_IN_OVERFLOW");
+
+    // Transfer all the tokens to vault if one is set
+    if (vault != address(0)) {
+      IERC4626(vault).deposit(amount, address(this));
+    }
+
     return balanceAfter - balanceBefore; // underflow already checked above, just subtract
   }
 
@@ -177,10 +230,14 @@ contract CErc20 is CToken, CErc20Interface {
    *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
    */
   function doTransferOut(address to, uint256 amount) internal virtual override {
-    _callOptionalReturn(
-      abi.encodeWithSelector(EIP20NonStandardInterface(underlying).transfer.selector, to, amount),
-      "TOKEN_TRANSFER_OUT_FAILED"
-    );
+    if (vault == address(0)) {
+      _callOptionalReturn(
+        abi.encodeWithSelector(EIP20NonStandardInterface(underlying).transfer.selector, to, amount),
+        "TOKEN_TRANSFER_OUT_FAILED"
+      );
+    } else {
+      IERC4626(vault).withdraw(amount, to, address(this));
+    }
   }
 
   /**
