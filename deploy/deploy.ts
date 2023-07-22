@@ -54,17 +54,15 @@ const func: DeployFunction = async ({ run, ethers, getNamedAccounts, deployments
   if (ethDel.transactionHash) await ethers.provider.waitForTransaction(ethDel.transactionHash);
   console.log("CEtherDelegate: ", ethDel.address);
 
-  dep = await deployments.deterministic("FuseFeeDistributor", {
+  const ffd = await deployments.deploy("FuseFeeDistributor", {
     from: deployer,
-    salt: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(SALT)),
     args: [],
     log: true,
     proxy: {
-      proxyContract: "OpenZeppelinTransparentProxy",
+      proxyContract: "UUPS",
     },
   });
 
-  const ffd = await dep.deploy();
   console.log("FuseFeeDistributor: ", ffd.address);
   const fuseFeeDistributor = await ethers.getContract("FuseFeeDistributor", deployer);
   let owner = await fuseFeeDistributor.owner();
@@ -100,16 +98,14 @@ const func: DeployFunction = async ({ run, ethers, getNamedAccounts, deployments
 
   ////
   //// FUSE CORE CONTRACTS
-  dep = await deployments.deterministic("FusePoolDirectory", {
+  const fpd = await deployments.deploy("FusePoolDirectory", {
     from: deployer,
-    salt: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(SALT)),
     args: [],
     log: true,
     proxy: {
-      proxyContract: "OpenZeppelinTransparentProxy",
+      proxyContract: "UUPS",
     },
   });
-  const fpd = await dep.deploy();
   if (fpd.transactionHash) await ethers.provider.waitForTransaction(fpd.transactionHash);
   console.log("FusePoolDirectory: ", fpd.address);
   const fusePoolDirectory = await ethers.getContract("FusePoolDirectory", deployer);

@@ -14,8 +14,9 @@ The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publ
 - Removed the Comptroller constructor
   - It was not being used, as the Comptroller is an implementation it should not store data
 - Add vault on CErc20.sol to deposit extra cash so it can earn yield
-
-
+- Use UUPS proxy for FusePoolDirectory and FuseFeeDistributor
+  - Upgrades are now the responsability of implementation, so a contract can be bricked. We've added tests so it's not possible.
+  - We made sure to keep all relevant Ownable API
 ## Structure
 
 ```text

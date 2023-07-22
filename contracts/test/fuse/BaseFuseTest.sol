@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "solmate/tokens/ERC20.sol";
 import { MockERC20 } from "solmate/test/utils/mocks/MockERC20.sol";
+import { ERC1967Proxy } from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "../../compound/CToken.sol";
 import "../../compound/CErc20Delegate.sol";
@@ -50,13 +51,33 @@ contract BaseFuseTest is Test {
       Comptroller comptrollerImpl = new Comptroller();
       cERC20Impl = new CErc20Delegate();
 
-      fuseFeeDistributor = new FuseFeeDistributor();
-      fuseFeeDistributor.initialize(address(this), 0.1e18, address(comptrollerImpl), address(cERC20Impl));
+      FuseFeeDistributor fuseFeeDistributorImpl = new FuseFeeDistributor();
+      ERC1967Proxy fuseFeeDistributorProxy = new ERC1967Proxy(
+        address(fuseFeeDistributorImpl),
+        abi.encodeWithSelector(
+          fuseFeeDistributor.initialize.selector,
+          address(this),
+          0.1e18,
+          address(comptrollerImpl),
+          address(cERC20Impl)
+        )
+      );
+      fuseFeeDistributor = FuseFeeDistributor(payable(fuseFeeDistributorProxy));
 
       address[] memory emptyAddresses = new address[](0);
 
-      fusePoolDirectory = new FusePoolDirectory();
-      fusePoolDirectory.initialize(address(this), address(fuseFeeDistributor), false, emptyAddresses);
+      FusePoolDirectory fusePoolDirectoryImpl = new FusePoolDirectory();
+      ERC1967Proxy fusePoolDirectoryProxy = new ERC1967Proxy(
+        address(fusePoolDirectoryImpl),
+        abi.encodeWithSelector(
+          FusePoolDirectory.initialize.selector,
+          address(this),
+          address(fuseFeeDistributor),
+          false,
+          emptyAddresses
+        )
+      );
+      fusePoolDirectory = FusePoolDirectory(payable(fusePoolDirectoryProxy));
 
       address[] memory emptyAddressArray = new address[](0);
       IPriceOracle[] memory emptyPriceOracleArray = new IPriceOracle[](0);

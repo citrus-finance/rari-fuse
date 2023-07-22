@@ -5,6 +5,7 @@ import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.s
 import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/utils/Create2Upgradeable.sol";
 
+import "./utils/UUPSOwnableUpgradeable.sol";
 import "./external/compound/IComptroller.sol";
 import "./external/compound/IUnitroller.sol";
 import "./external/compound/IPriceOracle.sol";
@@ -15,7 +16,7 @@ import "./compound/Unitroller.sol";
  * @author David Lucid <david@rari.capital> (https://github.com/davidlucid)
  * @notice FusePoolDirectory is a directory for Fuse interest rate pools.
  */
-contract FusePoolDirectory is OwnableUpgradeable {
+contract FusePoolDirectory is UUPSOwnableUpgradeable {
   /**
    * @dev Emitted when a new Fuse pool is added to the directory.
    */
@@ -87,8 +88,7 @@ contract FusePoolDirectory is OwnableUpgradeable {
     bool _enforceDeployerWhitelist,
     address[] memory _deployerWhitelist
   ) public initializer {
-    __Ownable_init();
-    transferOwnership(owner);
+    __UUPSOwnableUpgradeable_init(owner);
     fuseAdmin = _fuseAdmin;
     enforceDeployerWhitelist = _enforceDeployerWhitelist;
     for (uint256 i = 0; i < _deployerWhitelist.length; i++) deployerWhitelist[_deployerWhitelist[i]] = true;

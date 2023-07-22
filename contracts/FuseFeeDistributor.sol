@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
-import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/utils/AddressUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/utils/Create2Upgradeable.sol";
+
+import "./utils/UUPSOwnableUpgradeable.sol";
 import "./compound/CEtherDelegator.sol";
 import "./compound/CErc20Delegator.sol";
 
@@ -15,7 +15,7 @@ import "./compound/CErc20Delegator.sol";
  * @author David Lucid <david@rari.capital> (https://github.com/davidlucid)
  * @notice FuseFeeDistributor controls and receives protocol fees from Fuse pools and relays admin actions to Fuse pools.
  */
-contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
+contract FuseFeeDistributor is UUPSOwnableUpgradeable {
   using AddressUpgradeable for address;
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -97,8 +97,7 @@ contract FuseFeeDistributor is Initializable, OwnableUpgradeable {
     address initialCErc20Delegate
   ) public initializer {
     require(_defaultInterestFeeRate <= 1e18, "Interest fee rate cannot be more than 100%.");
-    __Ownable_init();
-    transferOwnership(owner);
+    __UUPSOwnableUpgradeable_init(owner);
     defaultInterestFeeRate = _defaultInterestFeeRate;
     maxSupplyEth = type(uint256).max;
     maxUtilizationRate = type(uint256).max;
