@@ -6,10 +6,6 @@ import "openzeppelin-contracts/contracts/utils/Address.sol";
 import "./IERC4626.sol";
 import "./CToken.sol";
 
-interface CompLike {
-  function delegate(address delegatee) external;
-}
-
 interface PauseGuardianComptroller {
   function pauseGuardian() external pure returns (address);
 }
@@ -145,14 +141,16 @@ contract CErc20 is CToken, CErc20Interface {
    * @param newVault The address of the new vault
    */
   function setVault(address newVault) external {
-    bool hasRights = hasAdminRights();
+    if (
+      !hasAdminRights() &&
+      (msg.sender != PauseGuardianComptroller(address(comptroller)).pauseGuardian() || newVault != address(0))
+    ) {
+      revert Unauthorized();
+    }
 
-    require(
-      hasRights || msg.sender == PauseGuardianComptroller(address(comptroller)).pauseGuardian(),
-      "only guardian or admin can change the vault"
-    );
-    require(hasRights || newVault == address(0), "only admin can set vault");
-    require(newVault == address(0) || Address.isContract(newVault), "vault must be a contract");
+    if (newVault != address(0) && !Address.isContract(newVault)) {
+      revert InvalidVault();
+    }
 
     if (vault != address(0)) {
       IERC4626 _vault = IERC4626(vault);
@@ -210,7 +208,9 @@ contract CErc20 is CToken, CErc20Interface {
 
     // Calculate the amount that was *actually* transferred
     uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
-    require(balanceAfter >= balanceBefore, "TOKEN_TRANSFER_IN_OVERFLOW");
+    if (balanceAfter < balanceBefore) {
+      revert TokenTransferInOverflow();
+    }
 
     // Transfer all the tokens to vault if one is set
     if (vault != address(0)) {
@@ -249,15 +249,5 @@ contract CErc20 is CToken, CErc20Interface {
   function _callOptionalReturn(bytes memory data, string memory errorMessage) internal {
     bytes memory returndata = _functionCall(underlying, data, errorMessage);
     if (returndata.length > 0) require(abi.decode(returndata, (bool)), errorMessage);
-  }
-
-  /**
-   * @notice Admin call to delegate the votes of the COMP-like underlying
-   * @param compLikeDelegatee The address to delegate votes to
-   * @dev CTokens whose underlying are not CompLike should revert here
-   */
-  function _delegateCompLikeTo(address compLikeDelegatee) external {
-    require(hasAdminRights(), "only the admin may set the comp-like delegate");
-    CompLike(underlying).delegate(compLikeDelegatee);
   }
 }

@@ -21,11 +21,6 @@ contract CEtherDelegate is CDelegateInterface, CEther {
    */
   function _becomeImplementation(bytes calldata data) external override {
     require(msg.sender == address(this) || hasAdminRights(), "!self");
-
-    // Make sure admin storage is set up correctly
-    __admin = payable(0);
-    __adminHasRights = false;
-    __fuseAdminHasRights = false;
   }
 
   /**

@@ -73,7 +73,7 @@ contract VaultTest is BaseFuseTest {
 
     MockERC4626 vault = new MockERC4626(tokenOne, "Vault", "V");
 
-    vm.expectRevert(bytes("only admin can set vault"));
+    vm.expectRevert(CTokenInterface.Unauthorized.selector);
     vm.prank(guardian);
     tokenOneMarket.setVault(address(vault));
   }

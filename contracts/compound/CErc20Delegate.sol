@@ -20,12 +20,9 @@ contract CErc20Delegate is CDelegateInterface, CErc20 {
    * @param data The encoded bytes data for any initialization
    */
   function _becomeImplementation(bytes calldata data) external virtual override {
-    require(msg.sender == address(this) || hasAdminRights(), "!self");
-
-    // Make sure admin storage is set up correctly
-    __admin = payable(0);
-    __adminHasRights = false;
-    __fuseAdminHasRights = false;
+    if (msg.sender != address(this) && !hasAdminRights()) {
+      revert Unauthorized();
+    }
   }
 
   /**
@@ -50,10 +47,9 @@ contract CErc20Delegate is CDelegateInterface, CErc20 {
     bytes memory becomeImplementationData
   ) internal {
     // Check whitelist
-    require(
-      IFuseFeeDistributor(fuseAdmin).cErc20DelegateWhitelist(implementation, implementation_, allowResign),
-      "!impl"
-    );
+    if (!IFuseFeeDistributor(fuseAdmin).cErc20DelegateWhitelist(implementation, implementation_, allowResign)) {
+      revert ImplementationNotWhitelisted();
+    }
 
     // Call _resignImplementation internally (this delegate's code)
     if (allowResign) _resignImplementation();
@@ -87,7 +83,9 @@ contract CErc20Delegate is CDelegateInterface, CErc20 {
     bytes calldata becomeImplementationData
   ) external override {
     // Check admin rights
-    require(hasAdminRights(), "!admin");
+    if (!hasAdminRights()) {
+      revert Unauthorized();
+    }
 
     // Set implementation
     _setImplementationInternal(implementation_, allowResign, becomeImplementationData);

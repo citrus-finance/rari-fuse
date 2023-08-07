@@ -11,21 +11,6 @@ contract CTokenAdminStorage {
    * Administrator for Fuse
    */
   address payable public fuseAdmin;
-
-  /**
-   * @dev LEGACY USE ONLY: Administrator for this contract
-   */
-  address payable internal __admin;
-
-  /**
-   * @dev LEGACY USE ONLY: Whether or not the Fuse admin has admin rights
-   */
-  bool internal __fuseAdminHasRights;
-
-  /**
-   * @dev LEGACY USE ONLY: Whether or not the admin has admin rights
-   */
-  bool internal __adminHasRights;
 }
 
 contract CTokenStorage is CTokenAdminStorage {
@@ -264,6 +249,58 @@ abstract contract CTokenInterface is CTokenStorage {
    * @notice EIP20 Approval event
    */
   event Approval(address indexed owner, address indexed spender, uint256 amount);
+
+  /*** Errors ***/
+
+  error Unauthorized();
+
+  error InvalidVault();
+
+  error TokenTransferInOverflow();
+
+  error AlreadyInitialised();
+
+  error InvalidInitialExchangeRate();
+
+  error SettingComptrollerFailed();
+
+  error SettingInterestRateModelFailed();
+
+  error SettingReserveFactorFailed();
+
+  error SettingAdminFeeFailed();
+
+  error BalanceCalculationFailed();
+
+  error AccrueInterestFailed();
+
+  error BorrowBalanceStoreFailed();
+
+  error ExchangeRateStoreFailed();
+
+  error BorrowRateAbsurdlyHigh();
+
+  error TimestampDeltaCalculationFailed();
+
+  error MintExchangeCalculationFailed();
+
+  error RedeemInputInvalid();
+
+  error RepayBorrowNewAccountBorrowBalanceCalculationFailed();
+
+  error RepayBorrowNewTotalBalanceCalculationFailed();
+
+  error LiquidateComptrollerCalculateAmountSeizeFailed();
+
+  error LiquidateSeizeTooMuch();
+
+  error TokenSeizureFailed();
+
+  error InvalidComptroller();
+
+  error InvalidInterestRateModel();
+
+  error ReEntered();
 
   /*** User Interface ***/
 

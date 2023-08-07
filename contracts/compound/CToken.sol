@@ -46,38 +46,49 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     uint256 reserveFactorMantissa_,
     uint256 adminFeeMantissa_
   ) public {
-    require(msg.sender == fuseAdmin_, "only Fuse admin may initialize the market");
-    require(accrualTimestamp == 0 && borrowIndex == 0, "market may only be initialized once");
+    if (msg.sender != fuseAdmin_) {
+      revert Unauthorized();
+    }
+
+    if (accrualTimestamp != 0 || borrowIndex != 0) {
+      revert AlreadyInitialised();
+    }
 
     fuseAdmin = fuseAdmin_;
 
     // Set initial exchange rate
     initialExchangeRateMantissa = initialExchangeRateMantissa_;
-    require(initialExchangeRateMantissa > 0, "initial exchange rate must be greater than zero.");
+    if (initialExchangeRateMantissa <= 0) {
+      revert InvalidInitialExchangeRate();
+    }
 
     // Set the comptroller
-    uint256 err = _setComptroller(comptroller_);
-    require(err == uint256(Error.NO_ERROR), "setting comptroller failed");
+    if (_setComptroller(comptroller_) != uint256(Error.NO_ERROR)) {
+      revert SettingComptrollerFailed();
+    }
 
     // Initialize timestamp and borrow index (timestamp mocks depend on comptroller being set)
     accrualTimestamp = block.timestamp;
     borrowIndex = mantissaOne;
 
     // Set the interest rate model (depends on timestamp / borrow index)
-    err = _setInterestRateModelFresh(interestRateModel_);
-    require(err == uint256(Error.NO_ERROR), "setting interest rate model failed");
+    if (_setInterestRateModelFresh(interestRateModel_) != uint256(Error.NO_ERROR)) {
+      revert SettingInterestRateModelFailed();
+    }
 
     name = name_;
     symbol = symbol_;
     decimals = decimals_;
 
     // Set reserve factor
-    err = _setReserveFactorFresh(reserveFactorMantissa_);
-    require(err == uint256(Error.NO_ERROR), "setting reserve factor failed");
+    if (_setReserveFactorFresh(reserveFactorMantissa_) != uint256(Error.NO_ERROR)) {
+      revert SettingReserveFactorFailed();
+    }
 
     // Set admin fee
-    err = _setAdminFeeFresh(adminFeeMantissa_);
-    require(err == uint256(Error.NO_ERROR), "setting admin fee failed");
+    if (_setAdminFeeFresh(adminFeeMantissa_) != uint256(Error.NO_ERROR)) {
+      revert SettingAdminFeeFailed();
+    }
 
     // The counter starts true to prevent changing it from zero to non-zero (i.e. smaller cost/refund)
     _notEntered = true;
@@ -226,7 +237,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
   function balanceOfUnderlying(address owner) external override returns (uint256) {
     Exp memory exchangeRate = Exp({ mantissa: exchangeRateCurrent() });
     (MathError mErr, uint256 balance) = mulScalarTruncate(exchangeRate, accountTokens[owner]);
-    require(mErr == MathError.NO_ERROR, "balance could not be calculated");
+    if (mErr != MathError.NO_ERROR) {
+      revert BalanceCalculationFailed();
+    }
     return balance;
   }
 
@@ -288,7 +301,10 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @return The total borrows with interest
    */
   function totalBorrowsCurrent() external override nonReentrant(false) returns (uint256) {
-    require(accrueInterest() == uint256(Error.NO_ERROR), "accrue interest failed");
+    if (accrueInterest() != uint256(Error.NO_ERROR)) {
+      revert AccrueInterestFailed();
+    }
+
     return totalBorrows;
   }
 
@@ -298,7 +314,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @return The calculated balance
    */
   function borrowBalanceCurrent(address account) external override nonReentrant(false) returns (uint256) {
-    require(accrueInterest() == uint256(Error.NO_ERROR), "accrue interest failed");
+    if (accrueInterest() != uint256(Error.NO_ERROR)) {
+      revert AccrueInterestFailed();
+    }
     return borrowBalanceStored(account);
   }
 
@@ -309,7 +327,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    */
   function borrowBalanceStored(address account) public view override returns (uint256) {
     (MathError err, uint256 result) = borrowBalanceStoredInternal(account);
-    require(err == MathError.NO_ERROR, "borrowBalanceStored: borrowBalanceStoredInternal failed");
+    if (err != MathError.NO_ERROR) {
+      revert BorrowBalanceStoreFailed();
+    }
     return result;
   }
 
@@ -355,7 +375,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @return Calculated exchange rate scaled by 1e18
    */
   function exchangeRateCurrent() public override nonReentrant(false) returns (uint256) {
-    require(accrueInterest() == uint256(Error.NO_ERROR), "accrue interest failed");
+    if (accrueInterest() != uint256(Error.NO_ERROR)) {
+      revert AccrueInterestFailed();
+    }
     return exchangeRateStored();
   }
 
@@ -366,7 +388,10 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    */
   function exchangeRateStored() public view override returns (uint256) {
     (MathError err, uint256 result) = exchangeRateStoredInternal();
-    require(err == MathError.NO_ERROR, "exchangeRateStored: exchangeRateStoredInternal failed");
+    if (err != MathError.NO_ERROR) {
+      revert ExchangeRateStoreFailed();
+    }
+
     return result;
   }
 
@@ -442,11 +467,16 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
       totalBorrows,
       add_(totalReserves, add_(totalAdminFees, totalFuseFees))
     );
-    require(borrowRateMantissa <= borrowRateMaxMantissa, "borrow rate is absurdly high");
+
+    if (borrowRateMantissa > borrowRateMaxMantissa) {
+      revert BorrowRateAbsurdlyHigh();
+    }
 
     /* Calculate the number of seconds elapsed since the last accrual */
     (MathError mathErr, uint256 secondDelta) = subUInt(currentTimestamp, accrualTimestamp);
-    require(mathErr == MathError.NO_ERROR, "could not calculate timestamp delta");
+    if (mathErr != MathError.NO_ERROR) {
+      revert TimestampDeltaCalculationFailed();
+    }
 
     return finishInterestAccrual(currentTimestamp, cashPrior, borrowRateMantissa, secondDelta);
   }
@@ -590,7 +620,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
       vars.actualMintAmount,
       Exp({ mantissa: vars.exchangeRateMantissa })
     );
-    require(vars.mathErr == MathError.NO_ERROR, "MINT_EXCHANGE_CALCULATION_FAILED");
+    if (vars.mathErr != MathError.NO_ERROR) {
+      revert MintExchangeCalculationFailed();
+    }
 
     /*
      * We calculate the new total supply of cTokens and minter token balance, checking for overflow:
@@ -666,7 +698,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function redeemFresh(address redeemer, uint256 redeemTokensIn, uint256 redeemAmountIn) internal returns (uint256) {
-    require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
+    if (redeemTokensIn != 0 && redeemAmountIn != 0) {
+      revert RedeemInputInvalid();
+    }
 
     RedeemLocalVars memory vars;
 
@@ -987,10 +1021,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      *  totalBorrowsNew = totalBorrows - actualRepayAmount
      */
     (vars.mathErr, vars.accountBorrowsNew) = subUInt(vars.accountBorrows, vars.actualRepayAmount);
-    require(vars.mathErr == MathError.NO_ERROR, "REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED");
+    if (vars.mathErr != MathError.NO_ERROR) {
+      revert RepayBorrowNewAccountBorrowBalanceCalculationFailed();
+    }
 
     (vars.mathErr, vars.totalBorrowsNew) = subUInt(totalBorrows, vars.actualRepayAmount);
-    require(vars.mathErr == MathError.NO_ERROR, "REPAY_BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED");
+    if (vars.mathErr != MathError.NO_ERROR) {
+      revert RepayBorrowNewTotalBalanceCalculationFailed();
+    }
 
     /* We write the previously calculated values into storage */
     accountBorrows[borrower].principal = vars.accountBorrowsNew;
@@ -1104,10 +1142,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
       address(cTokenCollateral),
       actualRepayAmount
     );
-    require(amountSeizeError == uint256(Error.NO_ERROR), "LIQUIDATE_COMPTROLLER_CALCULATE_AMOUNT_SEIZE_FAILED");
+    if (amountSeizeError != uint256(Error.NO_ERROR)) {
+      revert LiquidateComptrollerCalculateAmountSeizeFailed();
+    }
 
     /* Revert if borrower collateral token balance < seizeTokens */
-    require(cTokenCollateral.balanceOf(borrower) >= seizeTokens, "LIQUIDATE_SEIZE_TOO_MUCH");
+    if (cTokenCollateral.balanceOf(borrower) < seizeTokens) {
+      revert LiquidateSeizeTooMuch();
+    }
 
     // If this is also the collateral, run seizeInternal to avoid re-entrancy, otherwise make an external call
     uint256 seizeError;
@@ -1118,7 +1160,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /* Revert if seize tokens fails (since we cannot be sure of side effects) */
-    require(seizeError == uint256(Error.NO_ERROR), "token seizure failed");
+    if (seizeError != uint256(Error.NO_ERROR)) {
+      revert TokenSeizureFailed();
+    }
 
     /* We emit a LiquidateBorrow event */
     emit LiquidateBorrow(liquidator, borrower, actualRepayAmount, address(cTokenCollateral), seizeTokens);
@@ -1206,7 +1250,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     vars.liquidatorSeizeTokens = sub_(sub_(seizeTokens, vars.protocolSeizeTokens), vars.feeSeizeTokens);
 
     (vars.mathErr, vars.exchangeRateMantissa) = exchangeRateStoredInternal();
-    require(vars.mathErr == MathError.NO_ERROR, "exchange rate math error");
+    if (vars.mathErr != MathError.NO_ERROR) {
+      revert ExchangeRateStoreFailed();
+    }
 
     vars.protocolSeizeAmount = mul_ScalarTruncate(
       Exp({ mantissa: vars.exchangeRateMantissa }),
@@ -1257,7 +1303,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
   function _setComptroller(ComptrollerInterface newComptroller) internal returns (uint256) {
     ComptrollerInterface oldComptroller = comptroller;
     // Ensure invoke comptroller.isComptroller() returns true
-    require(newComptroller.isComptroller(), "marker method returned false");
+    if (!newComptroller.isComptroller()) {
+      revert InvalidComptroller();
+    }
 
     // Set market's comptroller to newComptroller
     comptroller = newComptroller;
@@ -1592,7 +1640,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     oldInterestRateModel = interestRateModel;
 
     // Ensure invoke newInterestRateModel.isInterestRateModel() returns true
-    require(newInterestRateModel.isInterestRateModel(), "marker method returned false");
+    if (!newInterestRateModel.isInterestRateModel()) {
+      revert InvalidInterestRateModel();
+    }
 
     // Set the interest rate model to newInterestRateModel
     interestRateModel = newInterestRateModel;
@@ -1618,7 +1668,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    */
   function _setNameAndSymbol(string calldata _name, string calldata _symbol) external {
     // Check caller is admin
-    require(hasAdminRights(), "caller not admin");
+    if (!hasAdminRights()) {
+      revert Unauthorized();
+    }
 
     // Set ERC20 name and symbol
     name = _name;
@@ -1668,7 +1720,10 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * In this specific case, the optimization saves around 1500 bytes of that valuable 24 KB limit.
    */
   function _beforeNonReentrant(bool localOnly) private {
-    require(_notEntered, "re-entered");
+    if (!_notEntered) {
+      revert ReEntered();
+    }
+
     if (!localOnly) comptroller._beforeNonReentrant();
     _notEntered = false;
   }

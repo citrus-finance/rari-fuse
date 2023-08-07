@@ -14,6 +14,8 @@ abstract contract CDelegateInterface is CDelegationStorage {
    */
   event NewImplementation(address oldImplementation, address newImplementation);
 
+  error ImplementationNotWhitelisted();
+
   /**
    * @notice Called by the admin to update the implementation of the delegator
    * @param implementation_ The address of the new implementation for delegation
