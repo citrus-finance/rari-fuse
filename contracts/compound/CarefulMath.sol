@@ -8,6 +8,8 @@ pragma solidity >=0.8.0;
  *         https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/math/SafeMath.sol
  */
 contract CarefulMath {
+  uint256 internal constant MAX_UINT256 = 2 ** 256 - 1;
+
   /**
    * @dev Possible error codes that we can return
    */
@@ -81,5 +83,24 @@ contract CarefulMath {
     }
 
     return subUInt(sum, c);
+  }
+
+  // Copied from: https://github.com/transmissions11/solmate/blob/fadb2e2778adbf01c80275bfb99e5c14969d964b/src/utils/FixedPointMathLib.sol#L28-L30
+  function divWadUp(uint256 x, uint256 y) internal pure returns (uint256) {
+    return mulDivUp(x, 1e18, y); // Equivalent to (x * WAD) / y rounded up.
+  }
+
+  function mulDivUp(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
+    /// @solidity memory-safe-assembly
+    assembly {
+      // Equivalent to require(denominator != 0 && (y == 0 || x <= type(uint256).max / y))
+      if iszero(mul(denominator, iszero(mul(y, gt(x, div(MAX_UINT256, y)))))) {
+        revert(0, 0)
+      }
+
+      // If x * y modulo the denominator is strictly greater than 0,
+      // 1 is added to round up the division of x * y by the denominator.
+      z := add(gt(mod(mul(x, y), denominator), 0), div(mul(x, y), denominator))
+    }
   }
 }

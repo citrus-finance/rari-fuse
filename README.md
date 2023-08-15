@@ -17,6 +17,9 @@ The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publ
 - Use UUPS proxy for FusePoolDirectory and FuseFeeDistributor
   - Upgrades are now the responsability of implementation, so a contract can be bricked. We've added tests so it's not possible.
   - We made sure to keep all relevant Ownable API
+- Fixed math issue when redeeming tokens, for more details see: https://twitter.com/danielvf/status/1647329491788677121
+
+
 ## Structure
 
 ```text

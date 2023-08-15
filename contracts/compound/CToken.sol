@@ -734,14 +734,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
        *  redeemAmount = redeemAmountIn
        */
 
-      (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(
-        redeemAmountIn,
-        Exp({ mantissa: vars.exchangeRateMantissa })
-      );
-      if (vars.mathErr != MathError.NO_ERROR) {
-        return
-          failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint256(vars.mathErr));
-      }
+      vars.redeemTokens = divWadUp(redeemAmountIn, vars.exchangeRateMantissa);
 
       vars.redeemAmount = redeemAmountIn;
     }
