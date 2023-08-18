@@ -18,6 +18,8 @@ The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publ
   - Upgrades are now the responsability of implementation, so a contract can be bricked. We've added tests so it's not possible.
   - We made sure to keep all relevant Ownable API
 - Fixed math issue when redeeming tokens, for more details see: https://twitter.com/danielvf/status/1647329491788677121
+- Added ERC4626 support to CErc20, which means another address can now redeem your tokens for you.
+  - Redeeming on your behalf shoud only be possible if you allowed that address
 
 
 ## Structure

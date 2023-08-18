@@ -91,6 +91,8 @@ abstract contract ComptrollerInterface {
 
   function transferVerify(address cToken, address src, address dst, uint256 transferTokens) external virtual;
 
+  function getSupplyCap(address cToken) external view virtual returns (uint256);
+
   /*** Liquidity/Liquidation Calculations ***/
 
   function liquidateCalculateSeizeTokens(

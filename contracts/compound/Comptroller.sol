@@ -84,6 +84,9 @@ contract Comptroller is ComptrollerV3Storage, ComptrollerInterface, ComptrollerE
   // liquidationIncentiveMantissa must be no greater than this value
   uint256 internal constant liquidationIncentiveMaxMantissa = 1.5e18; // 1.5
 
+  // Going above this value might brick the market
+  uint256 internal constant maxSupplyCap = 1e36;
+
   /*** Assets You Are In ***/
 
   /**
@@ -259,30 +262,26 @@ contract Comptroller is ComptrollerV3Storage, ComptrollerInterface, ComptrollerE
       return uint256(Error.SUPPLIER_NOT_WHITELISTED);
     }
 
-    // Check supply cap
-    uint256 supplyCap = supplyCaps[cToken];
-    // Supply cap of 0 corresponds to unlimited supplying
-    if (supplyCap != 0) {
-      uint256 totalCash = CToken(cToken).getCash();
-      uint256 totalBorrows = CToken(cToken).totalBorrows();
-      uint256 totalReserves = CToken(cToken).totalReserves();
-      uint256 totalFuseFees = CToken(cToken).totalFuseFees();
-      uint256 totalAdminFees = CToken(cToken).totalAdminFees();
+    uint256 supplyCap = getSupplyCap(cToken);
+    uint256 totalCash = CToken(cToken).getCash();
+    uint256 totalBorrows = CToken(cToken).totalBorrows();
+    uint256 totalReserves = CToken(cToken).totalReserves();
+    uint256 totalFuseFees = CToken(cToken).totalFuseFees();
+    uint256 totalAdminFees = CToken(cToken).totalAdminFees();
 
-      // totalUnderlyingSupply = totalCash + totalBorrows - (totalReserves + totalFuseFees + totalAdminFees)
-      (MathError mathErr, uint256 totalUnderlyingSupply) = addThenSubUInt(
-        totalCash,
-        totalBorrows,
-        add_(add_(totalReserves, totalFuseFees), totalAdminFees)
-      );
-      if (mathErr != MathError.NO_ERROR) return uint256(Error.MATH_ERROR);
+    // totalUnderlyingSupply = totalCash + totalBorrows - (totalReserves + totalFuseFees + totalAdminFees)
+    (MathError mathErr, uint256 totalUnderlyingSupply) = addThenSubUInt(
+      totalCash,
+      totalBorrows,
+      add_(add_(totalReserves, totalFuseFees), totalAdminFees)
+    );
+    if (mathErr != MathError.NO_ERROR) return uint256(Error.MATH_ERROR);
 
-      uint256 nextTotalUnderlyingSupply;
-      (mathErr, nextTotalUnderlyingSupply) = addUInt(totalUnderlyingSupply, mintAmount);
-      if (mathErr != MathError.NO_ERROR) return uint256(Error.MATH_ERROR);
+    uint256 nextTotalUnderlyingSupply;
+    (mathErr, nextTotalUnderlyingSupply) = addUInt(totalUnderlyingSupply, mintAmount);
+    if (mathErr != MathError.NO_ERROR) return uint256(Error.MATH_ERROR);
 
-      require(nextTotalUnderlyingSupply < supplyCap, "market supply cap reached");
-    }
+    require(nextTotalUnderlyingSupply < supplyCap, "market supply cap reached");
 
     // Keep the flywheel moving
     flywheelPreSupplierAction(cToken, minter);
@@ -1383,9 +1382,23 @@ contract Comptroller is ComptrollerV3Storage, ComptrollerInterface, ComptrollerE
     require(numMarkets != 0 && numMarkets == numSupplyCaps, "invalid input");
 
     for (uint256 i = 0; i < numMarkets; i++) {
+      require(newSupplyCaps[i] < maxSupplyCap, "supply cap too high");
+
       supplyCaps[address(cTokens[i])] = newSupplyCaps[i];
       emit NewSupplyCap(cTokens[i], newSupplyCaps[i]);
     }
+  }
+
+  function getSupplyCap(address cToken) public view override returns (uint256) {
+    uint256 supplyCap = supplyCaps[cToken];
+
+    // Supply cap of 0 corresponds to unlimited supplying
+    // we still want to cap as some tokens might be brick the market
+    if (supplyCap == 0) {
+      supplyCap = maxSupplyCap;
+    }
+
+    return supplyCap;
   }
 
   /**

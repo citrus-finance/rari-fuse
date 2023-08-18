@@ -56,6 +56,189 @@ contract CErc20 is CToken, CErc20Interface {
     EIP20Interface(underlying).totalSupply();
   }
 
+  /*** ERC4626 Interface */
+
+  function asset() public view returns (address) {
+    return underlying;
+  }
+
+  function deposit(uint256 assets, address receiver) public virtual returns (uint256) {
+    accrueInterest();
+
+    (uint256 err, uint256 actualAssets) = mintInternal(assets, receiver);
+    if (err != uint256(Error.NO_ERROR)) {
+      revert();
+    }
+
+    return previewDeposit(actualAssets);
+  }
+
+  function mint(uint256 shares, address receiver) public virtual returns (uint256) {
+    accrueInterest();
+
+    uint256 assets = previewMint(shares);
+    (uint256 err, uint256 actualMintAmount) = mintInternal(assets, receiver);
+    if (err != uint256(Error.NO_ERROR)) {
+      revert();
+    }
+
+    return actualMintAmount;
+  }
+
+  function withdraw(uint256 assets, address receiver, address owner) public virtual returns (uint256 shares) {
+    accrueInterest();
+
+    shares = previewWithdraw(assets);
+
+    uint256 err = redeemUnderlyingInternal(assets, receiver, owner);
+    if (err != uint256(Error.NO_ERROR)) {
+      revert();
+    }
+  }
+
+  function redeem(uint256 shares, address receiver, address owner) public virtual returns (uint256 assets) {
+    accrueInterest();
+
+    assets = previewRedeem(shares);
+
+    uint256 err = redeemInternal(shares, receiver, owner);
+    if (err != uint256(Error.NO_ERROR)) {
+      revert();
+    }
+  }
+
+  function totalAssets() public view virtual returns (uint256) {
+    /* Remember the initial timestamp */
+    uint256 currentTimestamp = block.timestamp;
+
+    /* Read the previous values out of storage */
+    uint256 cashPrior = getCashPrior();
+
+    if (currentTimestamp == accrualTimestamp) {
+      (MathError mathErr, uint256 cashPlusBorrowsMinusReserves) = addThenSubUInt(
+        cashPrior,
+        totalBorrows,
+        add_(totalReserves, add_(totalAdminFees, totalFuseFees))
+      );
+      if (mathErr != MathError.NO_ERROR) {
+        revert BalanceCalculationFailed();
+      }
+
+      return cashPlusBorrowsMinusReserves;
+    }
+
+    /* Calculate the current borrow interest rate */
+    uint256 borrowRateMantissa = interestRateModel.getBorrowRate(
+      cashPrior,
+      totalBorrows,
+      add_(totalReserves, add_(totalAdminFees, totalFuseFees))
+    );
+
+    if (borrowRateMantissa > borrowRateMaxMantissa) {
+      revert BorrowRateAbsurdlyHigh();
+    }
+
+    /* Calculate the number of seconds elapsed since the last accrual */
+    (MathError mathErr, uint256 secondDelta) = subUInt(currentTimestamp, accrualTimestamp);
+    if (mathErr != MathError.NO_ERROR) {
+      revert TimestampDeltaCalculationFailed();
+    }
+
+    Exp memory simpleInterestFactor = mul_(Exp({ mantissa: borrowRateMantissa }), secondDelta);
+    uint256 interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, totalBorrows);
+    uint256 totalBorrowsNew = add_(interestAccumulated, totalBorrows);
+    uint256 totalReservesNew = mul_ScalarTruncateAddUInt(
+      Exp({ mantissa: reserveFactorMantissa }),
+      interestAccumulated,
+      totalReserves
+    );
+    uint256 totalFuseFeesNew = mul_ScalarTruncateAddUInt(
+      Exp({ mantissa: fuseFeeMantissa }),
+      interestAccumulated,
+      totalFuseFees
+    );
+    uint256 totalAdminFeesNew = mul_ScalarTruncateAddUInt(
+      Exp({ mantissa: adminFeeMantissa }),
+      interestAccumulated,
+      totalAdminFees
+    );
+    uint256 cashPlusBorrowsMinusReserves;
+
+    (mathErr, cashPlusBorrowsMinusReserves) = addThenSubUInt(
+      cashPrior,
+      totalBorrowsNew,
+      add_(totalReservesNew, add_(totalAdminFeesNew, totalFuseFeesNew))
+    );
+    if (mathErr != MathError.NO_ERROR) {
+      revert BalanceCalculationFailed();
+    }
+
+    return cashPlusBorrowsMinusReserves;
+  }
+
+  function convertToShares(uint256 assets) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    uint256 exchangeRate = supply == 0 ? initialExchangeRateMantissa : ((totalAssets() * 1e18) / supply);
+
+    return (1e18 * assets) / exchangeRate;
+  }
+
+  function convertToAssets(uint256 shares) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    uint256 exchangeRate = supply == 0 ? initialExchangeRateMantissa : ((1e18 * totalAssets()) / supply);
+
+    return (shares * exchangeRate) / 1e18;
+  }
+
+  function previewDeposit(uint256 assets) public view virtual returns (uint256) {
+    return convertToShares(assets);
+  }
+
+  function previewMint(uint256 shares) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    uint256 exchangeRate = supply == 0 ? initialExchangeRateMantissa : ((1e18 * totalAssets()) / supply);
+
+    return mulWadUp(shares, exchangeRate);
+  }
+
+  function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
+    uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+
+    uint256 exchangeRate = supply == 0 ? initialExchangeRateMantissa : ((totalAssets() * 1e18) / supply);
+
+    return divWadUp(assets, exchangeRate);
+  }
+
+  function previewRedeem(uint256 shares) public view virtual returns (uint256) {
+    return convertToAssets(shares);
+  }
+
+  function maxDeposit(address) public view virtual returns (uint256) {
+    uint256 supplyCap = comptroller.getSupplyCap(address(this));
+    uint256 assets = totalAssets();
+
+    if (assets >= supplyCap) {
+      return 0;
+    }
+
+    return supplyCap - assets - 1;
+  }
+
+  function maxMint(address receiver) public view virtual returns (uint256) {
+    return convertToShares(maxDeposit(receiver));
+  }
+
+  function maxWithdraw(address owner) public view virtual returns (uint256) {
+    return convertToAssets(accountTokens[owner]);
+  }
+
+  function maxRedeem(address owner) public view virtual returns (uint256) {
+    return accountTokens[owner];
+  }
+
   /*** User Interface ***/
 
   /**
@@ -65,7 +248,7 @@ contract CErc20 is CToken, CErc20Interface {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function mint(uint256 mintAmount) external override returns (uint256) {
-    (uint256 err, ) = mintInternal(mintAmount);
+    (uint256 err, ) = mintInternal(mintAmount, msg.sender);
     return err;
   }
 
@@ -76,7 +259,7 @@ contract CErc20 is CToken, CErc20Interface {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function redeem(uint256 redeemTokens) external override returns (uint256) {
-    return redeemInternal(redeemTokens);
+    return redeemInternal(redeemTokens, msg.sender, msg.sender);
   }
 
   /**
@@ -86,7 +269,7 @@ contract CErc20 is CToken, CErc20Interface {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function redeemUnderlying(uint256 redeemAmount) external override returns (uint256) {
-    return redeemUnderlyingInternal(redeemAmount);
+    return redeemUnderlyingInternal(redeemAmount, msg.sender, msg.sender);
   }
 
   /**

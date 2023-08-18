@@ -42,7 +42,7 @@ contract BaseFuseTest is Test {
 
   CErc20 public cERC20Impl;
 
-  function setUp() public {
+  function setUp() public virtual {
     if (block.chainid == 31337) {
       tokenOne = new MockERC20("Wrapped Ether", "WETH", 18);
       tokenTwo = new MockERC20("Wrapped BTC", "WBTC", 8);

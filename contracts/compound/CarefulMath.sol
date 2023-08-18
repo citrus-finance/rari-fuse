@@ -85,9 +85,13 @@ contract CarefulMath {
     return subUInt(sum, c);
   }
 
-  // Copied from: https://github.com/transmissions11/solmate/blob/fadb2e2778adbf01c80275bfb99e5c14969d964b/src/utils/FixedPointMathLib.sol#L28-L30
+  // Copied from: https://github.com/transmissions11/solmate/blob/fadb2e2778adbf01c80275bfb99e5c14969d964b/src/utils/FixedPointMathLib.sol
   function divWadUp(uint256 x, uint256 y) internal pure returns (uint256) {
     return mulDivUp(x, 1e18, y); // Equivalent to (x * WAD) / y rounded up.
+  }
+
+  function mulWadUp(uint256 x, uint256 y) internal pure returns (uint256) {
+    return mulDivUp(x, y, 1e18); // Equivalent to (x * y) / WAD rounded up.
   }
 
   function mulDivUp(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {

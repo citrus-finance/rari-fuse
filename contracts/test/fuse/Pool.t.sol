@@ -32,6 +32,35 @@ contract PoolTest is BaseFuseTest {
 
     assertEq(tokenTwo.balanceOf(address(this)), tokenTwoBorrowAmount);
     assertEq(tokenTwoMarket.borrowBalanceCurrent(address(this)), tokenTwoBorrowAmount);
+
+    skip(60_000);
+
+    // HACK: don't invert, order is essentials
+    assertEq(
+      (tokenTwoMarket.totalAssets() * 1e18) / tokenTwoMarket.totalSupply(),
+      tokenTwoMarket.exchangeRateCurrent()
+    );
+  }
+
+  function testDepositRedeemMax() public skipUnsuportedChain {
+    deal(address(tokenOne), address(this), tokenOneMarket.maxDeposit(address(this)));
+
+    tokenOne.approve(address(tokenOneMarket), tokenOneMarket.maxDeposit(address(this)));
+    tokenOneMarket.mint(tokenOneMarket.maxDeposit(address(this)));
+    tokenOneMarket.redeemUnderlying(tokenOneMarket.maxDeposit(address(this)));
+
+    assertEq(tokenOne.balanceOf(address(this)), tokenOneMarket.maxDeposit(address(this)));
+  }
+
+  function testERC4626Mint() public skipUnsuportedChain {
+    deal(address(tokenOne), address(this), 10e18);
+
+    tokenOne.approve(address(tokenOneMarket), 10e18);
+    tokenOneMarket.deposit(10e18, address(this));
+
+    tokenOneMarket.redeem(tokenOneMarket.balanceOf(address(this)), address(this), address(this));
+
+    assertEq(tokenOne.balanceOf(address(this)), 10e18);
   }
 
   function testMintRedeemPrecision() public skipUnsuportedChain {
@@ -69,6 +98,48 @@ contract PoolTest is BaseFuseTest {
 
     // if user2 manage to get more token than the amount remaning in the market, something went wrong
     assertApproxLeAbs(tokenOne.balanceOf(user2), tokenOneMarket.getCash(), 0);
+  }
+
+  function testMarketOnBehalf() public skipUnsuportedChain {
+    uint256 tokenOneDepositAmount = getAmountOfTokenOne(1_000);
+
+    addLiquidity(tokenTwo, getAmountOfTokenTwo(1_000_000));
+
+    address user = makeAddr("user");
+    deal(address(tokenOne), user, tokenOneDepositAmount);
+
+    vm.prank(user);
+    tokenOne.approve(address(this), tokenOneDepositAmount);
+
+    tokenOne.transferFrom(user, address(this), tokenOneDepositAmount);
+    tokenOne.approve(address(tokenOneMarket), tokenOneDepositAmount);
+    tokenOneMarket.deposit(tokenOneDepositAmount, user);
+
+    vm.prank(user);
+    tokenOneMarket.approve(address(this), tokenOneDepositAmount * 10);
+
+    tokenOneMarket.withdraw(tokenOneDepositAmount, user, user);
+
+    assertEq(tokenOne.balanceOf(user), tokenOneDepositAmount);
+  }
+
+  function testCannotRedeemOnBehalf() public skipUnsuportedChain {
+    uint256 tokenOneDepositAmount = getAmountOfTokenOne(1_000);
+
+    addLiquidity(tokenTwo, getAmountOfTokenTwo(1_000_000));
+
+    address user = makeAddr("user");
+    deal(address(tokenOne), user, tokenOneDepositAmount);
+
+    vm.prank(user);
+    tokenOne.approve(address(this), tokenOneDepositAmount);
+
+    tokenOne.transferFrom(user, address(this), tokenOneDepositAmount);
+    tokenOne.approve(address(tokenOneMarket), tokenOneDepositAmount);
+    tokenOneMarket.deposit(tokenOneDepositAmount, user);
+
+    vm.expectRevert();
+    tokenOneMarket.withdraw(tokenOneDepositAmount, user, user);
   }
 
   // Copied from: https://github.com/a16z/erc4626-tests/blob/8b1d7c2ac248c33c3506b1bff8321758943c5e11/ERC4626.prop.sol#L391-L403

@@ -544,14 +544,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param mintAmount The amount of the underlying asset to supply
    * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
    */
-  function mintInternal(uint256 mintAmount) internal nonReentrant(false) returns (uint256, uint256) {
+  function mintInternal(uint256 mintAmount, address receiver) internal nonReentrant(false) returns (uint256, uint256) {
     uint256 error = accrueInterest();
     if (error != uint256(Error.NO_ERROR)) {
       // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
       return (fail(Error(error), FailureInfo.MINT_ACCRUE_INTEREST_FAILED), 0);
     }
     // mintFresh emits the actual Mint event if successful and logs on errors, so we don't need to
-    return mintFresh(msg.sender, mintAmount);
+    return mintFresh(msg.sender, mintAmount, receiver);
   }
 
   struct MintLocalVars {
@@ -567,13 +567,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
   /**
    * @notice User supplies assets into the market and receives cTokens in exchange
    * @dev Assumes interest has already been accrued up to the current timestamp
-   * @param minter The address of the account which is supplying the assets
+   * @param caller The address of the account which is supplying the assets
    * @param mintAmount The amount of the underlying asset to supply
+   * @param receiver The address that will receive the tokens
    * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
    */
-  function mintFresh(address minter, uint256 mintAmount) internal returns (uint256, uint256) {
+  function mintFresh(address caller, uint256 mintAmount, address receiver) internal returns (uint256, uint256) {
     /* Fail if mint not allowed */
-    uint256 allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
+    uint256 allowed = comptroller.mintAllowed(address(this), receiver, mintAmount);
     if (allowed != 0) {
       return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed), 0);
     }
@@ -609,7 +610,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      *  in case of a fee. On success, the cToken holds an additional `actualMintAmount`
      *  of cash.
      */
-    vars.actualMintAmount = doTransferIn(minter, mintAmount);
+    vars.actualMintAmount = doTransferIn(caller, mintAmount);
 
     /*
      * We get the current exchange rate and calculate the number of cTokens to be minted:
@@ -631,18 +632,18 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      */
     vars.totalSupplyNew = add_(totalSupply, vars.mintTokens);
 
-    vars.accountTokensNew = add_(accountTokens[minter], vars.mintTokens);
+    vars.accountTokensNew = add_(accountTokens[receiver], vars.mintTokens);
 
     /* We write previously calculated values into storage */
     totalSupply = vars.totalSupplyNew;
-    accountTokens[minter] = vars.accountTokensNew;
+    accountTokens[receiver] = vars.accountTokensNew;
 
     /* We emit a Mint event, and a Transfer event */
-    emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
-    emit Transfer(address(this), minter, vars.mintTokens);
+    emit Mint(receiver, vars.actualMintAmount, vars.mintTokens);
+    emit Transfer(address(this), receiver, vars.mintTokens);
 
     /* We call the defense hook */
-    comptroller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
+    comptroller.mintVerify(address(this), receiver, vars.actualMintAmount, vars.mintTokens);
 
     return (uint256(Error.NO_ERROR), vars.actualMintAmount);
   }
@@ -653,30 +654,40 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param redeemTokens The number of cTokens to redeem into underlying
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function redeemInternal(uint256 redeemTokens) internal nonReentrant(false) returns (uint256) {
+  function redeemInternal(
+    uint256 redeemTokens,
+    address receiver,
+    address owner
+  ) internal nonReentrant(false) returns (uint256) {
     uint256 error = accrueInterest();
     if (error != uint256(Error.NO_ERROR)) {
       // accrueInterest emits logs on errors, but we still want to log the fact that an attempted redeem failed
       return fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED);
     }
     // redeemFresh emits redeem-specific logs on errors, so we don't need to
-    return redeemFresh(msg.sender, redeemTokens, 0);
+    return redeemFresh(msg.sender, redeemTokens, 0, receiver, owner);
   }
 
   /**
    * @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
    * @dev Accrues interest whether or not the operation succeeds, unless reverted
    * @param redeemAmount The amount of underlying to receive from redeeming cTokens
+   * @param receiver The address that will receive the tokens
+   * @param owner The address those tokens are being redeemed
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function redeemUnderlyingInternal(uint256 redeemAmount) internal nonReentrant(false) returns (uint256) {
+  function redeemUnderlyingInternal(
+    uint256 redeemAmount,
+    address receiver,
+    address owner
+  ) internal nonReentrant(false) returns (uint256) {
     uint256 error = accrueInterest();
     if (error != uint256(Error.NO_ERROR)) {
       // accrueInterest emits logs on errors, but we still want to log the fact that an attempted redeem failed
       return fail(Error(error), FailureInfo.REDEEM_ACCRUE_INTEREST_FAILED);
     }
     // redeemFresh emits redeem-specific logs on errors, so we don't need to
-    return redeemFresh(msg.sender, 0, redeemAmount);
+    return redeemFresh(msg.sender, 0, redeemAmount, receiver, owner);
   }
 
   struct RedeemLocalVars {
@@ -692,12 +703,20 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
   /**
    * @notice User redeems cTokens in exchange for the underlying asset
    * @dev Assumes interest has already been accrued up to the current timestamp
-   * @param redeemer The address of the account which is redeeming the tokens
+   * @param caller The address of the account which is redeeming the tokens
    * @param redeemTokensIn The number of cTokens to redeem into underlying (only one of redeemTokensIn or redeemAmountIn may be non-zero)
    * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens (only one of redeemTokensIn or redeemAmountIn may be non-zero)
+   * @param receiver The address that will receive the tokens
+   * @param owner The address those tokens are being redeemed
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function redeemFresh(address redeemer, uint256 redeemTokensIn, uint256 redeemAmountIn) internal returns (uint256) {
+  function redeemFresh(
+    address caller,
+    uint256 redeemTokensIn,
+    uint256 redeemAmountIn,
+    address receiver,
+    address owner
+  ) internal returns (uint256) {
     if (redeemTokensIn != 0 && redeemAmountIn != 0) {
       revert RedeemInputInvalid();
     }
@@ -739,8 +758,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
       vars.redeemAmount = redeemAmountIn;
     }
 
+    if (caller != owner) {
+      uint256 allowed = transferAllowances[owner][caller];
+
+      if (allowed != type(uint256).max) transferAllowances[owner][caller] = allowed - vars.redeemTokens;
+    }
+
     /* Fail if redeem not allowed */
-    uint256 allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
+    uint256 allowed = comptroller.redeemAllowed(address(this), owner, vars.redeemTokens);
     if (allowed != 0) {
       return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
     }
@@ -761,7 +786,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint256(vars.mathErr));
     }
 
-    (vars.mathErr, vars.accountTokensNew) = subUInt(accountTokens[redeemer], vars.redeemTokens);
+    (vars.mathErr, vars.accountTokensNew) = subUInt(accountTokens[owner], vars.redeemTokens);
     if (vars.mathErr != MathError.NO_ERROR) {
       return
         failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED, uint256(vars.mathErr));
@@ -778,7 +803,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
     /* We write previously calculated values into storage */
     totalSupply = vars.totalSupplyNew;
-    accountTokens[redeemer] = vars.accountTokensNew;
+    accountTokens[owner] = vars.accountTokensNew;
 
     /*
      * We invoke doTransferOut for the redeemer and the redeemAmount.
@@ -786,14 +811,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      *  On success, the cToken has redeemAmount less of cash.
      *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
      */
-    doTransferOut(redeemer, vars.redeemAmount);
+    doTransferOut(receiver, vars.redeemAmount);
 
     /* We emit a Transfer event, and a Redeem event */
-    emit Transfer(redeemer, address(this), vars.redeemTokens);
-    emit Redeem(redeemer, vars.redeemAmount, vars.redeemTokens);
+    emit Transfer(owner, address(this), vars.redeemTokens);
+    emit Redeem(owner, vars.redeemAmount, vars.redeemTokens);
 
     /* We call the defense hook */
-    comptroller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
+    comptroller.redeemVerify(address(this), owner, vars.redeemAmount, vars.redeemTokens);
 
     return uint256(Error.NO_ERROR);
   }
@@ -826,6 +851,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function borrowFresh(address borrower, uint256 borrowAmount) internal returns (uint256) {
+    // TODO: make sure called is allowed to borrow
+
     /* Fail if borrow not allowed */
     uint256 allowed = comptroller.borrowAllowed(address(this), borrower, borrowAmount);
     if (allowed != 0) {
