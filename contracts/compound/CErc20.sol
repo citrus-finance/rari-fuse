@@ -278,7 +278,28 @@ contract CErc20 is CToken, CErc20Interface {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function borrow(uint256 borrowAmount) external override returns (uint256) {
-    return borrowInternal(borrowAmount);
+    return borrowInternal(borrowAmount, msg.sender, msg.sender);
+  }
+
+  /**
+   * @notice Sender borrows assets from the protocol on behalf of the borrower
+   * @param borrowAmount The amount of the underlying asset to borrow
+   * @param borrower The borrower
+   * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+   */
+  function borrowBehalf(uint256 borrowAmount, address borrower) external returns (uint256) {
+    return borrowInternal(borrowAmount, borrower, borrower);
+  }
+
+  /**
+   * @notice Sender borrows assets from the protocol on behalf of the borrower
+   * @param borrowAmount The amount of the underlying asset to borrow
+   * @param receiver The address that will receive the borrowed funds
+   * @param borrower The borrower
+   * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+   */
+  function borrowBehalf(uint256 borrowAmount, address receiver, address borrower) external returns (uint256) {
+    return borrowInternal(borrowAmount, receiver, borrower);
   }
 
   /**

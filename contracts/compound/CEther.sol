@@ -82,7 +82,7 @@ contract CEther is CToken, CEtherInterface {
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
   function borrow(uint256 borrowAmount) external returns (uint256) {
-    return borrowInternal(borrowAmount);
+    return borrowInternal(borrowAmount, msg.sender, msg.sender);
   }
 
   /**

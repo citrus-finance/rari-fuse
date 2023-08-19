@@ -129,6 +129,27 @@ contract Comptroller is ComptrollerV3Storage, ComptrollerInterface, ComptrollerE
   }
 
   /**
+   * @notice Add assets to be included in account liquidity calculation
+   * @param cTokens The list of addresses of the cToken markets to be enabled
+   * @param borrower The address that will enter the market
+   * @return Success indicator for whether each corresponding market was entered
+   */
+  function enterMarketsBehalf(address[] memory cTokens, address borrower) public returns (uint256[] memory) {
+    uint256 len = cTokens.length;
+
+    uint256[] memory results = new uint256[](len);
+    for (uint256 i = 0; i < len; i++) {
+      CToken cToken = CToken(cTokens[i]);
+
+      require(cToken.allowance(borrower, msg.sender) != 0, "Not allowed to enter market");
+
+      results[i] = uint256(addToMarketInternal(cToken, borrower));
+    }
+
+    return results;
+  }
+
+  /**
    * @notice Add the market to the borrower's "assets in" for liquidity calculations
    * @param cToken The market to enter
    * @param borrower The address of the account to modify

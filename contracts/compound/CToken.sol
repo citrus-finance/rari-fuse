@@ -828,14 +828,18 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param borrowAmount The amount of the underlying asset to borrow
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function borrowInternal(uint256 borrowAmount) internal nonReentrant(false) returns (uint256) {
+  function borrowInternal(
+    uint256 borrowAmount,
+    address receiver,
+    address borrower
+  ) internal nonReentrant(false) returns (uint256) {
     uint256 error = accrueInterest();
     if (error != uint256(Error.NO_ERROR)) {
       // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
       return fail(Error(error), FailureInfo.BORROW_ACCRUE_INTEREST_FAILED);
     }
     // borrowFresh emits borrow-specific logs on errors, so we don't need to
-    return borrowFresh(msg.sender, borrowAmount);
+    return borrowFresh(msg.sender, borrowAmount, receiver, borrower);
   }
 
   struct BorrowLocalVars {
@@ -850,8 +854,25 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
    * @param borrowAmount The amount of the underlying asset to borrow
    * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
    */
-  function borrowFresh(address borrower, uint256 borrowAmount) internal returns (uint256) {
-    // TODO: make sure called is allowed to borrow
+  function borrowFresh(
+    address caller,
+    uint256 borrowAmount,
+    address receiver,
+    address borrower
+  ) internal returns (uint256) {
+    if (caller != borrower) {
+      uint256 allowed = transferAllowances[borrower][caller];
+
+      /* exchangeRate = invoke Exchange Rate Stored() */
+      (MathError mathErr, uint256 exchangeRateMantissa) = exchangeRateStoredInternal();
+      if (mathErr != MathError.NO_ERROR) {
+        return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_RATE_READ_FAILED, uint256(mathErr));
+      }
+
+      uint256 borrowTokens = divWadUp(borrowAmount, exchangeRateMantissa);
+
+      if (allowed != type(uint256).max) transferAllowances[borrower][caller] = allowed - borrowTokens;
+    }
 
     /* Fail if borrow not allowed */
     uint256 allowed = comptroller.borrowAllowed(address(this), borrower, borrowAmount);
@@ -916,7 +937,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      *  On success, the cToken borrowAmount less of cash.
      *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
      */
-    doTransferOut(borrower, borrowAmount);
+    doTransferOut(receiver, borrowAmount);
 
     /* We write the previously calculated values into storage */
     accountBorrows[borrower].principal = vars.accountBorrowsNew;

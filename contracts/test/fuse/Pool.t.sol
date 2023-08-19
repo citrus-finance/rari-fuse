@@ -100,7 +100,7 @@ contract PoolTest is BaseFuseTest {
     assertApproxLeAbs(tokenOne.balanceOf(user2), tokenOneMarket.getCash(), 0);
   }
 
-  function testMarketOnBehalf() public skipUnsuportedChain {
+  function testRedeemOnBehalf() public skipUnsuportedChain {
     uint256 tokenOneDepositAmount = getAmountOfTokenOne(1_000);
 
     addLiquidity(tokenTwo, getAmountOfTokenTwo(1_000_000));
@@ -121,6 +121,81 @@ contract PoolTest is BaseFuseTest {
     tokenOneMarket.withdraw(tokenOneDepositAmount, user, user);
 
     assertEq(tokenOne.balanceOf(user), tokenOneDepositAmount);
+  }
+
+  function testBorrowOnBehalf() public skipUnsuportedChain {
+    uint256 tokenOneDepositAmount = getAmountOfTokenOne(1_000);
+    uint256 tokenTwoBorrowAmount = getAmountOfTokenTwo(100);
+
+    addLiquidity(tokenTwo, getAmountOfTokenTwo(1_000_000));
+
+    address user = makeAddr("user");
+    deal(address(tokenOne), user, tokenOneDepositAmount);
+
+    vm.prank(user);
+    tokenOne.approve(address(this), tokenOneDepositAmount);
+
+    tokenOne.transferFrom(user, address(this), tokenOneDepositAmount);
+    tokenOne.approve(address(tokenOneMarket), tokenOneDepositAmount);
+    tokenOneMarket.deposit(tokenOneDepositAmount, user);
+
+    vm.prank(user);
+    tokenOneMarket.approve(address(this), 1);
+    vm.prank(user);
+    tokenTwoMarket.approve(address(this), tokenTwoBorrowAmount * 10);
+
+    comptroller.enterMarketsBehalf(toArray(address(tokenOneMarket)), user);
+    tokenTwoMarket.borrowBehalf(tokenTwoBorrowAmount, user, user);
+
+    assertEq(tokenTwo.balanceOf(user), tokenTwoBorrowAmount);
+  }
+
+  function testBorrowOnBehalfWithoutApproval() public skipUnsuportedChain {
+    uint256 tokenOneDepositAmount = getAmountOfTokenOne(1_000);
+    uint256 tokenTwoBorrowAmount = getAmountOfTokenTwo(100);
+
+    addLiquidity(tokenTwo, getAmountOfTokenTwo(1_000_000));
+
+    address user = makeAddr("user");
+    deal(address(tokenOne), user, tokenOneDepositAmount);
+
+    vm.prank(user);
+    tokenOne.approve(address(this), tokenOneDepositAmount);
+
+    tokenOne.transferFrom(user, address(this), tokenOneDepositAmount);
+    tokenOne.approve(address(tokenOneMarket), tokenOneDepositAmount);
+    tokenOneMarket.deposit(tokenOneDepositAmount, user);
+
+    vm.prank(user);
+    tokenOneMarket.approve(address(this), 1);
+
+    comptroller.enterMarketsBehalf(toArray(address(tokenOneMarket)), user);
+
+    vm.expectRevert();
+    tokenTwoMarket.borrowBehalf(tokenTwoBorrowAmount, user, user);
+  }
+
+  function testEnterMarketBehalfWithoutApproval() public skipUnsuportedChain {
+    uint256 tokenOneDepositAmount = getAmountOfTokenOne(1_000);
+    uint256 tokenTwoBorrowAmount = getAmountOfTokenTwo(100);
+
+    addLiquidity(tokenTwo, getAmountOfTokenTwo(1_000_000));
+
+    address user = makeAddr("user");
+    deal(address(tokenOne), user, tokenOneDepositAmount);
+
+    vm.prank(user);
+    tokenOne.approve(address(this), tokenOneDepositAmount);
+
+    tokenOne.transferFrom(user, address(this), tokenOneDepositAmount);
+    tokenOne.approve(address(tokenOneMarket), tokenOneDepositAmount);
+    tokenOneMarket.deposit(tokenOneDepositAmount, user);
+
+    vm.prank(user);
+    tokenTwoMarket.approve(address(this), tokenTwoBorrowAmount * 10);
+
+    vm.expectRevert();
+    comptroller.enterMarketsBehalf(toArray(address(tokenOneMarket)), user);
   }
 
   function testCannotRedeemOnBehalf() public skipUnsuportedChain {

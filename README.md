@@ -20,6 +20,8 @@ The code was audited by Zellic for Midas Capital (https://github.com/Zellic/publ
 - Fixed math issue when redeeming tokens, for more details see: https://twitter.com/danielvf/status/1647329491788677121
 - Added ERC4626 support to CErc20, which means another address can now redeem your tokens for you.
   - Redeeming on your behalf shoud only be possible if you allowed that address
+- Allow someone to borrow on your behalf
+  - Borrowing on your behalf should only be possible if you allowed this address to
 
 
 ## Structure
