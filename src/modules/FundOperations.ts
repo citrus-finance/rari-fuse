@@ -89,14 +89,14 @@ export function withFundOperations<TBase extends FuseBaseConstructor>(Base: TBas
           this.provider.getSigner(options.from)
         ) as CErc20Delegate;
 
-        let response = (await cToken.callStatic.mint(amount)) as BigNumber;
+        let response = (await cToken.callStatic["mint(uint256)"](amount)) as BigNumber;
 
         if (response.toString() !== "0") {
           let errorCode = parseInt(response.toString());
           return { errorCode };
         }
 
-        tx = await cToken.mint(amount);
+        tx = await cToken["mint(uint256)"](amount);
       }
 
       return { tx, errorCode: null };

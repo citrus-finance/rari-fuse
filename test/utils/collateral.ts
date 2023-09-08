@@ -66,7 +66,7 @@ export async function approveAndMint(
       BigNumber.from(2).pow(BigNumber.from(256)).sub(constants.One)
     );
     await tx.wait();
-    tx = await cTokenContract.mint(amount);
+    tx = await cTokenContract["mint(uint256)"](amount);
   }
   return tx.wait();
 }
